@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"wiki/database"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -34,6 +35,10 @@ func main() {
 	fmt.Println()
 	database.TestConnection(ctx, db)
 
+	
+	fmt.Println()
+	log.Printf("Testing Database...\n")
+
 	fmt.Println()
 	log.Printf("testGetPageInfo(ctx, db):\n")
 	testGetPageInfo(ctx, db)
@@ -45,44 +50,20 @@ func main() {
 	testGetPageRevisionsInfo(ctx, db)
 
 	fmt.Println()
+	fmt.Println()
+	log.Printf("Testing File System...\n")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dataDir := filepath.Join(home, "trevecca", "trevecca-pedia", "wiki-fs")
+
+	fmt.Println()
+	log.Printf("testGetPage(dataDir)\n")
+	testGetPage(dataDir)
+
+	fmt.Println()
 	r.Run(":8080")
-}
-
-func testGetPageInfo(ctx context.Context, db *sql.DB) {
-	pageUUID, err := uuid.Parse("07918316-875e-4581-87ab-5b8d1d8bdd3a")
-	if err != nil {
-		log.Fatal(err)
-	}
-	testPage, err := database.GetPageInfo(ctx, db, pageUUID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("%#v\n", testPage)
-}
-
-func testGetPageNameUUID(ctx context.Context, db *sql.DB) {
-	res, err := database.GetPageNameUUIDs(ctx, db)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Name\t\tUUID\n")
-	for _, r := range res {
-		log.Printf("%s\t\t%s\n", r.Name, r.UUID)
-	}
-}
-
-func testGetPageRevisionsInfo(ctx context.Context, db *sql.DB) {
-	pageUUID, err := uuid.Parse("07918316-875e-4581-87ab-5b8d1d8bdd3a")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pageRevs, err := database.GetPageRevisionsInfo(ctx, db, pageUUID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("{UUID,\tDateTime,\tAuthor}\n")
-	for _, r := range pageRevs {
-		log.Printf("{%s,\t%s,\t%s}\n", r.UUID, r.DateTime, r.Author)
-	}
 }
 
