@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"wiki/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +32,7 @@ func main() {
 	ctx := context.Background()
 
 	fmt.Println()
-	database.TestConnection(ctx, db)
+	testConnection(ctx, db)
 
 	
 	fmt.Println()

@@ -9,8 +9,16 @@ import (
 	"github.com/google/uuid"
 )
 
+func testConnection(ctx context.Context, db *sql.DB) {
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Database connection established.")
+}
+
 func testGetPageInfo(ctx context.Context, db *sql.DB) {
-	pageUUID, err := uuid.Parse("07918316-875e-4581-87ab-5b8d1d8bdd3a")
+	//pageUUID, err := uuid.Parse("07918316-875e-4581-87ab-5b8d1d8bdd3a")
+	pageUUID, err := uuid.Parse("60b6b10c-db33-4b4c-9dcf-566f5b3c59a4")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -18,7 +26,8 @@ func testGetPageInfo(ctx context.Context, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("%#v\n", testPage)
+	log.Printf("ArchiveDate: %s\n", testPage.ArchiveDate)
+	log.Printf("%s\n", testPage)
 }
 
 func testGetPageNameUUID(ctx context.Context, db *sql.DB) {
