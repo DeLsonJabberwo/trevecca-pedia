@@ -16,20 +16,22 @@ import (
 func main() {
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
+	gin.SetMode(gin.DebugMode)
 
 	ctx, db, dataDir := setup()
+	defer db.Close()
 
 	r.GET("/pages/:id", func(c *gin.Context) {
 		pageId := c.Param("id")
 		page, err := requests.GetPage(ctx, db, dataDir, pageId)
 		if err != nil {
-			log.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err})
+			c.AbortWithStatus(http.StatusNotFound)
+			return
 		}
 		c.JSON(http.StatusOK, page)
 	})
 	
-	etcTesting(ctx, db, dataDir)
+	etcTesting(db, dataDir)
 
 	r.Run(":8080")
 }
@@ -42,7 +44,6 @@ func setup() (context.Context, *sql.DB, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -53,12 +54,12 @@ func setup() (context.Context, *sql.DB, string) {
 	return ctx, db, dataDir
 }
 
-func etcTesting(ctx context.Context, db *sql.DB, dataDir string) {
+func etcTesting(db *sql.DB, dataDir string) {
 	fmt.Println()
 	fmt.Println()
 	log.Printf("Etc. Testing...\n")
 	fmt.Println()
-	testConnection(ctx, db)
+	testConnection(db)
 
 	fmt.Println()
 	log.Printf("Testing File System...\n")

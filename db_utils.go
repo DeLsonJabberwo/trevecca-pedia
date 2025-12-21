@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func testConnection(ctx context.Context, db *sql.DB) {
+func testConnection(db *sql.DB) {
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}

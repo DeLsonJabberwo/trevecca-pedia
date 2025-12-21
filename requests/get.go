@@ -3,6 +3,7 @@ package requests
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"wiki/database"
 	"wiki/filesystem"
 
@@ -37,8 +38,12 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	if err != nil {
 		return Page{}, err
 	}
-	
+
 	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, content}
+
+	if page.DeletedAt != nil {
+		return Page{}, errors.New("not found")
+	}
 
 	return page, nil
 }
