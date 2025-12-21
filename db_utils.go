@@ -26,7 +26,6 @@ func testGetPageInfo(ctx context.Context, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("ArchiveDate: %s\n", testPage.ArchiveDate)
 	log.Printf("%s\n", testPage)
 }
 

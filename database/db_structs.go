@@ -8,6 +8,7 @@ import (
 
 type PageInfo struct {
 	UUID			uuid.UUID	`db:"uuid"`
+	Slug			string		`db:"slug"`
 	Name			string		`db:"name"`
 	LastRevisionId	*uuid.UUID	`db:"last_revision_id"`
 	ArchiveDate		*time.Time	`db:"archive_date"`

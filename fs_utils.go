@@ -17,5 +17,8 @@ func testGetPage(dataDir string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(page)
+	//fmt.Println(page)
+	if page != "" {
+		fmt.Println("GetPage(): success")
+	}
 }

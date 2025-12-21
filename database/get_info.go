@@ -8,12 +8,24 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func GetPageUUID(ctx context.Context, db *sql.DB, slug string) (uuid.UUID, error) {
+	var pageId uuid.UUID
+	err := db.QueryRowContext(
+			ctx,
+			"SELECT uuid FROM pages WHERE slug=$1", slug).
+			Scan(&pageId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return pageId, nil
+}
+
 func GetPageInfo(ctx context.Context, db *sql.DB, uuid uuid.UUID) (*PageInfo, error) {
 	var p PageInfo
 	err := db.QueryRowContext(
 			ctx,
 			"SELECT * FROM pages WHERE uuid=$1", uuid.String()).
-			Scan(&p.UUID, &p.Name, &p.LastRevisionId, &p.ArchiveDate, &p.DeletedAt)
+			Scan(&p.UUID, &p.Name, &p.LastRevisionId, &p.ArchiveDate, &p.DeletedAt, &p.Slug)
 	if err != nil {
 		return nil, err
 	}
