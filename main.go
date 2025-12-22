@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"wiki/requests"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,25 @@ func main() {
 
 	ctx, db, dataDir := setup()
 	defer db.Close()
+
+	// /pages?index={ind}&num={num}
+	r.GET("/pages", func(c *gin.Context) {
+		ind, err := strconv.Atoi(c.DefaultQuery("index", "0"))
+		if err != nil {
+			ind = 0
+		}
+		num, err := strconv.Atoi(c.DefaultQuery("num", "10"))
+		if err != nil {
+			num = 10
+		}
+		pages, err := requests.GetPages(ctx, db, ind, num)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+										"error": err,
+									})
+		}
+		c.JSON(http.StatusOK, pages)
+	})
 
 	r.GET("/pages/:id", func(c *gin.Context) {
 		pageId := c.Param("id")

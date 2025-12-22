@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"wiki/database"
 	"wiki/filesystem"
 
@@ -53,4 +54,47 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	}
 
 	return page, nil
+}
+
+func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.PageInfo, error) {
+	var pages []database.PageInfo = make([]database.PageInfo, num)
+
+	var count int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages OFFSET $1;", ind).Scan(&count)
+	if count != 0 && err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return pages, nil
+	}
+
+	uuids, err := db.QueryContext(ctx,
+				"SELECT uuid FROM pages OFFSET $1;", ind)
+	if err != nil {
+		return nil, err
+	}
+
+	// i can almost guarantee this disgusting loop
+	// could be done better and be much less tragic
+	uuids.Next()
+	for i := 0; i < num && i < count; i++ {
+		var id uuid.UUID
+		uuids.Scan(&id)
+		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		uuids.Next()
+		if pageInfo == nil {
+			continue
+		}
+		if err != nil {
+			log.Printf("error: %s\n", err)
+			return nil, err
+		}
+		if pageInfo.DeletedAt != nil {
+			i--
+			continue
+		}
+		pages[i] = *pageInfo
+	}
+
+	return pages, nil
 }
