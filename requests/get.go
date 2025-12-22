@@ -14,6 +14,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	var page Page
 	var info *database.PageInfo
 	var content string
+	var lastRev *database.RevInfo
 	var pageId uuid.UUID
 	var err error
 
@@ -39,7 +40,13 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 		return Page{}, err
 	}
 
-	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, content}
+	if info.LastRevisionId != nil {
+		lastRev = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
+	} else {
+		lastRev = &database.RevInfo{}
+	}
+
+	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, lastRev.UUID, lastRev.DateTime, content}
 
 	if page.DeletedAt != nil {
 		return Page{}, errors.New("not found")

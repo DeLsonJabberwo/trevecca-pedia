@@ -77,3 +77,12 @@ func GetPageRevisionsInfo(ctx context.Context, db *sql.DB, pageId uuid.UUID) ([]
 	return revs, nil
 }
 
+func GetRevisionInfo(ctx context.Context, db *sql.DB, revId uuid.UUID) *RevInfo {
+	var rev RevInfo
+	db.QueryRowContext(
+				ctx,
+				"SELECT uuid, date_time, author FROM revisions WHERE uuid=$1",
+				revId).Scan(&rev.UUID, &rev.DateTime, &rev.Author)
+	return &rev
+}
+

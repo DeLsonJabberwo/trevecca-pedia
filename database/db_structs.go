@@ -21,7 +21,7 @@ type NameUUID struct {
 }
 
 type RevInfo struct {
-	UUID		uuid.UUID	`db:"uuid"`
-	DateTime	time.Time	`db:"date_time"`
-	Author		string		`db:"author"`
+	UUID		*uuid.UUID	`db:"uuid"`
+	DateTime	*time.Time	`db:"date_time"`
+	Author		*string		`db:"author"`
 }
