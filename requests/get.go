@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 	"wiki/database"
 	"wiki/filesystem"
 
@@ -52,7 +54,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, lastRev.UUID, lastRev.DateTime, content}
 
 	if page.DeletedAt != nil {
-		return Page{}, errors.New("not found")
+		return Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
 	}
 
 	return page, nil
@@ -125,10 +127,6 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	rev.RevDateTime = *revInfo.DateTime
 
 	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
-	if *lastSnap.Revision != rev.UUID {
-		rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
-		return rev, nil
-	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
 	if err != nil {
 		return Revision{}, err
@@ -167,3 +165,62 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 
 	return rev, nil
 }
+
+func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num int) ([]database.RevInfo, error) {
+	var revs []database.RevInfo = make([]database.RevInfo, num)
+
+	var pageUUID uuid.UUID
+	if err := uuid.Validate(pageId); err == nil {
+		pageUUID, err = uuid.Parse(pageId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pageUUID, err = database.GetPageUUID(ctx, db, pageId)
+		if err != nil {
+			return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+		}
+	}
+
+	pageInfo, err := database.GetPageInfo(ctx, db, pageUUID)
+	if err != nil {
+		return nil, err
+	}
+	if pageInfo.DeletedAt != nil {
+		return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+	}
+
+	var count int
+	err = db.QueryRowContext(
+		ctx,
+		"SELECT COUNT(*) FROM revisions WHERE page_id=$1 OFFSET $2",
+		pageUUID, ind).Scan(&count)
+	if count != 0 && err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return revs, nil
+	}
+
+	uuids, err := db.QueryContext(
+		ctx,
+		"SELECT uuid FROM revisions WHERE page_id=$1 OFFSET $2",
+		pageUUID, ind)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range revs {
+		uuids.Next()
+		if uuids == nil {
+			break
+		}
+		var id uuid.UUID
+		uuids.Scan(&id)
+		revInfo := database.GetRevisionInfo(ctx, db, id)
+		revs[i] = *revInfo
+	}
+	
+	return revs, nil
+}
+

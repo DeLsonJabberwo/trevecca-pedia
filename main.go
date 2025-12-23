@@ -44,6 +44,10 @@ func main() {
 	r.GET("/pages/:id", func(c *gin.Context) {
 		pageId := c.Param("id")
 		page, err := requests.GetPage(ctx, db, dataDir, pageId)
+		if err != nil && err.Error() == strconv.Itoa(http.StatusNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
@@ -51,11 +55,34 @@ func main() {
 		c.JSON(http.StatusOK, page)
 	})
 
+	r.GET("/pages/:id/revisions", func(c *gin.Context) {
+		pageId := c.Param("id")
+		ind, err := strconv.Atoi(c.DefaultQuery("index", "0"))
+		if err != nil {
+			ind = 0
+		}
+		num, err := strconv.Atoi(c.DefaultQuery("num", "10"))
+		if err != nil {
+			num = 10
+		}
+		revisions, err := requests.GetRevisions(ctx, db, pageId, ind, num)
+		if err != nil && err.Error() == strconv.Itoa(http.StatusNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+										"error": err,
+									})
+			return
+		}
+		c.JSON(http.StatusOK, revisions)
+	})
+
 	r.GET("/pages/:id/revisions/:rev", func(c *gin.Context) {
 		revId := c.Param("rev")
 		revision, err := requests.GetRevision(ctx, db, dataDir, revId)
 		if err != nil && err.Error() == "404" {
-			log.Println(err)
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
