@@ -130,8 +130,11 @@ func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]Re
 	var snapRevTime time.Time
 
 	snap := GetMostRecentSnapshot(ctx, db, revId)
+	// shouldn't ever be nil, but I'll leave this here I guess
 	if snap.Revision == nil {
 		snapRevTime = time.Time{}
+	} else if *snap.Revision == revId {
+		return nil, nil
 	} else {
 		snap_rev := GetRevisionInfo(ctx, db, *snap.Revision)
 		snapRevTime = *snap_rev.DateTime

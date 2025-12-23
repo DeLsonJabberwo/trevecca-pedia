@@ -51,8 +51,6 @@ func main() {
 		c.JSON(http.StatusOK, page)
 	})
 
-	// TODO: implement way to get revisions that are snapshots
-	// and original snapshot
 	r.GET("/pages/:id/revisions/:rev", func(c *gin.Context) {
 		revId := c.Param("rev")
 		revision, err := requests.GetRevision(ctx, db, dataDir, revId)

@@ -125,6 +125,10 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	rev.RevDateTime = *revInfo.DateTime
 
 	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	if *lastSnap.Revision != rev.UUID {
+		rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
+		return rev, nil
+	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
 	if err != nil {
 		return Revision{}, err
