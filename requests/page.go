@@ -16,3 +16,12 @@ type Page struct {
 	LastEditTime	*time.Time	`json:"last_edit_time"`
 	Content			string		`json:"content"`
 }
+
+type Revision struct {
+	UUID			uuid.UUID	`json:"uuid"`
+	PageId			uuid.UUID	`json:"page_id"`
+	Name			string		`json:"name"`
+	RevDateTime		time.Time	`json:"rev_date_time"`
+	Author			string		`json:"author"`
+	Content			string		`json:"content"`
+}

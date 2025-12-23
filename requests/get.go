@@ -1,13 +1,15 @@
 package requests
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"fmt"
 	"wiki/database"
 	"wiki/filesystem"
 
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/google/uuid"
 )
 
@@ -36,7 +38,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 		return Page{}, err
 	}
 
-	content, err = filesystem.GetPage(dataDir, pageId)
+	content, err = filesystem.GetPageContent(dataDir, pageId)
 	if err != nil {
 		return Page{}, err
 	}
@@ -86,7 +88,6 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 			continue
 		}
 		if err != nil {
-			log.Printf("error: %s\n", err)
 			return nil, err
 		}
 		if pageInfo.DeletedAt != nil {
@@ -97,4 +98,68 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	}
 
 	return pages, nil
+}
+
+func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) (Revision, error) {
+	var err error
+	var rev = Revision{}
+
+	if err := uuid.Validate(revId); err != nil {
+		return Revision{}, err
+	}
+	rev.UUID, err = uuid.Parse(revId)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	revInfo := database.GetRevisionInfo(ctx, db, rev.UUID)
+	pageInfo, err := database.GetPageInfo(ctx, db, *revInfo.PageId)
+	if err != nil {
+		return Revision{}, err
+	}
+	if pageInfo.DeletedAt != nil {
+		return Revision{}, errors.New("404")
+	}
+	rev.PageId = *revInfo.PageId
+	rev.Name = pageInfo.Name
+	rev.RevDateTime = *revInfo.DateTime
+
+	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
+	if err != nil {
+		return Revision{}, err
+	}
+	rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	// i hope and pray that this works
+	// update: it worked. most errors were elsewhere :)
+	for _, r := range missingRevs {
+		revContent, err := filesystem.GetRevisionContent(dataDir, *r.UUID)
+		if err != nil {
+			return Revision{}, err
+		}
+		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
+		if err != nil {
+			return Revision{}, fmt.Errorf("couldn't parse revision: %w", err)
+		}
+		if len(files) == 0 {
+			continue
+		}
+		src := bytes.NewReader([]byte(rev.Content))
+		var dst bytes.Buffer
+
+		err = gitdiff.Apply(&dst, src, files[0])
+		if err != nil {
+			if errors.Is(err, &gitdiff.Conflict{}) {
+				return Revision{}, fmt.Errorf("conflict while applying revision: %w", err)
+			}
+			return Revision{}, fmt.Errorf("applying revision: %w", err)
+		}
+		rev.Content = dst.String()
+	}
+
+	return rev, nil
 }

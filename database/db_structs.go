@@ -22,6 +22,13 @@ type NameUUID struct {
 
 type RevInfo struct {
 	UUID		*uuid.UUID	`db:"uuid"`
+	PageId		*uuid.UUID	`db:"page_id"`
 	DateTime	*time.Time	`db:"date_time"`
 	Author		*string		`db:"author"`
+}
+
+type SnapInfo struct {
+	UUID		uuid.UUID	`db:"uuid"`
+	Page		uuid.UUID	`db:"page"`
+	Revision	*uuid.UUID	`db:"revision"`
 }

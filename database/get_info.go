@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -25,7 +26,7 @@ func GetPageInfo(ctx context.Context, db *sql.DB, uuid uuid.UUID) (*PageInfo, er
 	err := db.QueryRowContext(
 			ctx,
 			"SELECT * FROM pages WHERE uuid=$1", uuid.String()).
-			Scan(&p.UUID, &p.Name, &p.LastRevisionId, &p.ArchiveDate, &p.DeletedAt, &p.Slug)
+			Scan(&p.UUID, &p.Slug, &p.Name, &p.LastRevisionId, &p.ArchiveDate, &p.DeletedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +82,81 @@ func GetRevisionInfo(ctx context.Context, db *sql.DB, revId uuid.UUID) *RevInfo 
 	var rev RevInfo
 	db.QueryRowContext(
 				ctx,
-				"SELECT uuid, date_time, author FROM revisions WHERE uuid=$1",
-				revId).Scan(&rev.UUID, &rev.DateTime, &rev.Author)
+				"SELECT uuid, page_id, date_time, author FROM revisions WHERE uuid=$1",
+				revId).Scan(&rev.UUID, &rev.PageId, &rev.DateTime, &rev.Author)
 	return &rev
+}
+
+func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) SnapInfo {
+	revInfo := GetRevisionInfo(ctx, db, revId)
+	pageId := revInfo.PageId
+	var snapId uuid.UUID
+	var snap SnapInfo
+	var snapCount int
+	db.QueryRowContext(
+		ctx,
+		`SELECT COUNT(*) FROM snapshots
+		WHERE page=$1`,
+		pageId).
+		Scan(&snapCount)
+	if snapCount == 1 {
+		db.QueryRowContext(
+			ctx,
+			`SELECT uuid FROM snapshots
+			WHERE page=$1`,
+			pageId).
+			Scan(&snapId)
+	} else {
+		db.QueryRowContext(
+			ctx,
+			`SELECT uuid FROM snapshots
+			JOIN revisions ON snapshots.revision = revisions.uuid
+			WHERE snapshots.page=$1
+			ORDER BY revisions.date_time`,
+			pageId).
+			Scan(&snapId)
+	}
+	db.QueryRowContext(
+		ctx,
+		"SELECT * FROM snapshots WHERE uuid=$1",
+		snapId).
+		Scan(&snap.UUID, &snap.Page, &snap.Revision)
+	return snap
+}
+
+func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]RevInfo, error) {
+	var revs []RevInfo
+	var count int
+	var snapRevTime time.Time
+
+	snap := GetMostRecentSnapshot(ctx, db, revId)
+	if snap.Revision == nil {
+		snapRevTime = time.Time{}
+	} else {
+		snap_rev := GetRevisionInfo(ctx, db, *snap.Revision)
+		snapRevTime = *snap_rev.DateTime
+	}
+	db.QueryRowContext(
+		ctx,
+		"SELECT COUNT(*) FROM revisions WHERE date_time > $1",
+		snapRevTime).
+		Scan(&count)
+	revs = make([]RevInfo, count)
+
+	revIds, err := db.QueryContext(
+				ctx,
+				"SELECT uuid FROM revisions WHERE date_time >  $1 ORDER BY date_time ASC",
+				snapRevTime)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; revIds.Next(); i++ {
+		var id uuid.UUID
+		revIds.Scan(&id)
+		revs[i] = *GetRevisionInfo(ctx, db, id)
+	}
+
+	return revs, nil
 }
 

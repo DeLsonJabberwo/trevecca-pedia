@@ -13,7 +13,7 @@ func testGetPage(dataDir string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	page, err := filesystem.GetPage(dataDir, pageId)
+	page, err := filesystem.GetPageContent(dataDir, pageId)
 	if err != nil {
 		log.Fatal(err)
 	}
