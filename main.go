@@ -109,7 +109,7 @@ func main() {
 	
 	etcTesting(db, dataDir)
 
-	r.Run(":8080")
+	r.Run(":9494")
 }
 
 func setup() (context.Context, *sql.DB, string) {
