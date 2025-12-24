@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"wiki/database"
 	"wiki/requests"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,10 @@ func main() {
 	ctx, db, dataDir := setup()
 	defer db.Close()
 
-	// /pages?index={ind}&num={num}
+	// /pages?category={cat}&index={ind}&num={num}
 	r.GET("/pages", func(c *gin.Context) {
+		catQuery := c.DefaultQuery("category", "")
+		cat := database.ValidateCategory(ctx, db, catQuery)
 		ind, err := strconv.Atoi(c.DefaultQuery("index", "0"))
 		if err != nil {
 			ind = 0
@@ -32,11 +35,21 @@ func main() {
 		if err != nil {
 			num = 10
 		}
-		pages, err := requests.GetPages(ctx, db, ind, num)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err,
-									})
+		var pages []database.PageInfo
+		if cat == 0 {
+			pages, err = requests.GetPages(ctx, db, ind, num)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error": err,
+				})
+			}
+		} else {
+			pages, err = requests.GetPagesCategory(ctx, db, cat, ind, num)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error": err,
+				})
+			}
 		}
 		c.JSON(http.StatusOK, pages)
 	})

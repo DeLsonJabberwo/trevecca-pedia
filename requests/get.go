@@ -64,18 +64,22 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	var pages []database.PageInfo = make([]database.PageInfo, num)
 
 	var count int
-	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages OFFSET $1;", ind).Scan(&count)
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages").Scan(&count)
 	if count != 0 && err != nil {
 		return nil, err
 	}
-	if count == 0 {
+	count -= ind
+	if count <= 0 {
 		return pages, nil
 	}
 
 	uuids, err := db.QueryContext(ctx,
-				"SELECT uuid FROM pages OFFSET $1;", ind)
+				"SELECT uuid FROM pages")
 	if err != nil {
 		return nil, err
+	}
+	for range ind {
+		uuids.Next()
 	}
 
 	// i can almost guarantee this disgusting loop
@@ -93,6 +97,55 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 			return nil, err
 		}
 		if pageInfo.DeletedAt != nil {
+			i--
+			continue
+		}
+		pages[i] = *pageInfo
+	}
+
+	return pages, nil
+}
+
+func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int) ([]database.PageInfo, error) {
+	var pages []database.PageInfo = make([]database.PageInfo, num)
+
+	var count int
+	err := db.QueryRowContext(
+		ctx,
+		`SELECT COUNT(*) FROM pages
+		JOIN page_categories ON pages.uuid = page_categories.page_id
+		WHERE page_categories.category=$1`,
+		cat).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+	count -= ind
+	if count <= 0 {
+		return pages, nil
+	}
+
+	uuids, err := db.QueryContext(
+		ctx,
+		`SELECT uuid FROM pages
+		JOIN page_categories ON pages.uuid = page_categories.page_id
+		WHERE page_categories.category=$1`,
+		cat)
+	if err != nil {
+		return nil, err
+	}
+	for range ind {
+		uuids.Next()
+	}
+
+	for i := range pages {
+		uuids.Next()
+		if uuids == nil {
+			break
+		}
+		var id uuid.UUID
+		uuids.Scan(&id)
+		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		if err != nil {
 			i--
 			continue
 		}
@@ -193,21 +246,25 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 	var count int
 	err = db.QueryRowContext(
 		ctx,
-		"SELECT COUNT(*) FROM revisions WHERE page_id=$1 OFFSET $2",
-		pageUUID, ind).Scan(&count)
+		"SELECT COUNT(*) FROM revisions WHERE page_id=$1",
+		pageUUID).Scan(&count)
 	if count != 0 && err != nil {
 		return nil, err
 	}
-	if count == 0 {
+	count -= ind
+	if count <= 0 {
 		return revs, nil
 	}
 
 	uuids, err := db.QueryContext(
 		ctx,
-		"SELECT uuid FROM revisions WHERE page_id=$1 OFFSET $2",
-		pageUUID, ind)
+		"SELECT uuid FROM revisions WHERE page_id=$1",
+		pageUUID)
 	if err != nil {
 		return nil, err
+	}
+	for range ind {
+		uuids.Next()
 	}
 
 	for i := range revs {
