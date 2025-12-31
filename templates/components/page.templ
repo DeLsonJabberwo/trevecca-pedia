@@ -1,0 +1,21 @@
+package components
+
+templ Page(title string, children ...templ.Component) {
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta charset="UTF-8"/>
+            <title>{ title } | TreveccaPedia</title>
+            <link rel="stylesheet" href="/static/css/tailwind.css"/>
+        </head>
+        <body class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+            @Navigation()
+            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+                for _, child := range children {
+                    @child
+                }
+            </main>
+        </body>
+    </html>
+    
+}

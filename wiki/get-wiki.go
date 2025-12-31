@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"web/config"
+	"web/templates/components"
 	wikipages "web/templates/wiki-pages"
 	"web/utils"
 
@@ -33,7 +34,8 @@ func GetPage(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Couldn't parse json from API layer: %w\n", err))
 	}
 
-	component := wikipages.Page(page)
+	entryContent := wikipages.WikiEntryContent(page)
+	component := components.Page(page.Name, entryContent)
     component.Render(context.Background(), c.Writer)
 
 }
