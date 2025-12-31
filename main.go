@@ -107,9 +107,9 @@ func main() {
 		c.JSON(http.StatusOK, revision)
 	})
 	
-	etcTesting(db, dataDir)
+	//etcTesting(db, dataDir)
 
-	r.Run(":9494")
+	r.Run(":9454")
 }
 
 func setup() (context.Context, *sql.DB, string) {
