@@ -1,0 +1,23 @@
+services:
+  wiki-db:
+    image: postgres:16-alpine   # or postgres:15-alpine, stay recent but stable
+    container_name: wiki-db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_USER: wiki_user
+      POSTGRES_PASSWORD: $WIKI_DB_PASSWORD
+    volumes:
+      - wiki-data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d   # ← this automatically runs your .sql
+    ports:
+      - "5432:5432"   # expose to host so you can connect with pgAdmin, DBeaver, etc.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiki_user -d wiki"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  wiki-data:

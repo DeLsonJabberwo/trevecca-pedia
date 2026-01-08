@@ -1,0 +1,10 @@
+--- ./snapshots/46976289-d152-43d3-a2d7-f75b3102e471.md	2025-12-22 22:32:15.828869234 -0600
++++ ./pages/07918316-875e-4581-87ab-5b8d1d8bdd3a.md	2025-12-19 01:33:54.633787154 -0600
+@@ -56,7 +56,3 @@
+ - Resides in Nashville, TN with family and serves as a mentor to students and faculty.
+ 
+ ---
+-
+-He is also the puppet master of the illusive Dan Boone deep state.
+-
+----
