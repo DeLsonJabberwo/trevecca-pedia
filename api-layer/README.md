@@ -2,6 +2,11 @@
 
 ## Usage
 
+Set up go:
+```
+go get api-layer/cmd
+```
+
 Using air in the `api-layer` directory:
 ```
 air .

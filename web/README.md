@@ -2,6 +2,16 @@
 
 ## Usage
 
+Set up go:
+```
+go get web/cmd
+```
+
+Install [templ](https://templ.guide/quick-start/installation):
+```
+go install github.com/a-h/templ/cmd/templ@latest
+```
+
 Using air in the `web` directory:
 ```
 air .

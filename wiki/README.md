@@ -2,6 +2,11 @@
 
 ## Usage
 
+Set up go:
+```
+go get wiki
+```
+
 Using air in the `wiki` directory:
 ```
 air .
