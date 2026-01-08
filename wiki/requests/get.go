@@ -22,6 +22,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	var lastRev *database.RevInfo
 	var pageId uuid.UUID
 	var err error
+	
 
 	if err = uuid.Validate(id); err == nil {
 		pageId, err = uuid.Parse(id)
@@ -45,6 +46,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 		return Page{}, err
 	}
 
+
 	if info.LastRevisionId != nil {
 		lastRev = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
 	} else {
@@ -56,6 +58,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	if page.DeletedAt != nil {
 		return Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
 	}
+	
 
 	return page, nil
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"wiki/database"
@@ -121,11 +120,7 @@ func setup() (context.Context, *sql.DB, string) {
 		log.Fatal(err)
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	dataDir := filepath.Join(home, "trevecca", "trevecca-pedia", "wiki-fs")
+	dataDir := filepath.Join("..", "wiki-fs")
 
 	return ctx, db, dataDir
 }
