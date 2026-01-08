@@ -1,0 +1,283 @@
+package requests
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"wiki/database"
+	"wiki/filesystem"
+
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
+	"github.com/google/uuid"
+)
+
+func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, error) {
+	var page Page
+	var info *database.PageInfo
+	var content string
+	var lastRev *database.RevInfo
+	var pageId uuid.UUID
+	var err error
+
+	if err = uuid.Validate(id); err == nil {
+		pageId, err = uuid.Parse(id)
+		if err != nil {
+			return Page{}, err
+		}
+	} else {
+		pageId, err = database.GetPageUUID(ctx, db, id)
+		if err != nil {
+			return Page{}, err
+		}
+	}
+
+	info, err = database.GetPageInfo(ctx, db, pageId)
+	if err != nil {
+		return Page{}, err
+	}
+
+	content, err = filesystem.GetPageContent(dataDir, pageId)
+	if err != nil {
+		return Page{}, err
+	}
+
+	if info.LastRevisionId != nil {
+		lastRev = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
+	} else {
+		lastRev = &database.RevInfo{}
+	}
+
+	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, lastRev.UUID, lastRev.DateTime, content}
+
+	if page.DeletedAt != nil {
+		return Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
+	}
+
+	return page, nil
+}
+
+func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.PageInfo, error) {
+	var pages []database.PageInfo = make([]database.PageInfo, num)
+
+	var count int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages").Scan(&count)
+	if count != 0 && err != nil {
+		return nil, err
+	}
+	count -= ind
+	if count <= 0 {
+		return pages, nil
+	}
+
+	uuids, err := db.QueryContext(ctx,
+				"SELECT uuid FROM pages")
+	if err != nil {
+		return nil, err
+	}
+	for range ind {
+		uuids.Next()
+	}
+
+	// i can almost guarantee this disgusting loop
+	// could be done better and be much less tragic
+	uuids.Next()
+	for i := 0; i < num && i < count; i++ {
+		var id uuid.UUID
+		uuids.Scan(&id)
+		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		uuids.Next()
+		if pageInfo == nil {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if pageInfo.DeletedAt != nil {
+			i--
+			continue
+		}
+		pages[i] = *pageInfo
+	}
+
+	return pages, nil
+}
+
+func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int) ([]database.PageInfo, error) {
+	var pages []database.PageInfo = make([]database.PageInfo, num)
+
+	var count int
+	err := db.QueryRowContext(
+		ctx,
+		`SELECT COUNT(*) FROM pages
+		JOIN page_categories ON pages.uuid = page_categories.page_id
+		WHERE page_categories.category=$1`,
+		cat).Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+	count -= ind
+	if count <= 0 {
+		return pages, nil
+	}
+
+	uuids, err := db.QueryContext(
+		ctx,
+		`SELECT uuid FROM pages
+		JOIN page_categories ON pages.uuid = page_categories.page_id
+		WHERE page_categories.category=$1`,
+		cat)
+	if err != nil {
+		return nil, err
+	}
+	for range ind {
+		uuids.Next()
+	}
+
+	for i := range pages {
+		uuids.Next()
+		if uuids == nil {
+			break
+		}
+		var id uuid.UUID
+		uuids.Scan(&id)
+		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		if err != nil {
+			i--
+			continue
+		}
+		pages[i] = *pageInfo
+	}
+
+	return pages, nil
+}
+
+func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) (Revision, error) {
+	var err error
+	var rev = Revision{}
+
+	if err := uuid.Validate(revId); err != nil {
+		return Revision{}, err
+	}
+	rev.UUID, err = uuid.Parse(revId)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	revInfo := database.GetRevisionInfo(ctx, db, rev.UUID)
+	pageInfo, err := database.GetPageInfo(ctx, db, *revInfo.PageId)
+	if err != nil {
+		return Revision{}, err
+	}
+	if pageInfo.DeletedAt != nil {
+		return Revision{}, errors.New("404")
+	}
+	rev.PageId = *revInfo.PageId
+	rev.Name = pageInfo.Name
+	rev.RevDateTime = *revInfo.DateTime
+
+	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
+	if err != nil {
+		return Revision{}, err
+	}
+	rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
+	if err != nil {
+		return Revision{}, err
+	}
+
+	// i hope and pray that this works
+	// update: it worked. most errors were elsewhere :)
+	for _, r := range missingRevs {
+		revContent, err := filesystem.GetRevisionContent(dataDir, *r.UUID)
+		if err != nil {
+			return Revision{}, err
+		}
+		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
+		if err != nil {
+			return Revision{}, fmt.Errorf("couldn't parse revision: %w", err)
+		}
+		if len(files) == 0 {
+			continue
+		}
+		src := bytes.NewReader([]byte(rev.Content))
+		var dst bytes.Buffer
+
+		err = gitdiff.Apply(&dst, src, files[0])
+		if err != nil {
+			if errors.Is(err, &gitdiff.Conflict{}) {
+				return Revision{}, fmt.Errorf("conflict while applying revision: %w", err)
+			}
+			return Revision{}, fmt.Errorf("applying revision: %w", err)
+		}
+		rev.Content = dst.String()
+	}
+
+	return rev, nil
+}
+
+func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num int) ([]database.RevInfo, error) {
+	var revs []database.RevInfo = make([]database.RevInfo, num)
+
+	var pageUUID uuid.UUID
+	if err := uuid.Validate(pageId); err == nil {
+		pageUUID, err = uuid.Parse(pageId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pageUUID, err = database.GetPageUUID(ctx, db, pageId)
+		if err != nil {
+			return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+		}
+	}
+
+	pageInfo, err := database.GetPageInfo(ctx, db, pageUUID)
+	if err != nil {
+		return nil, err
+	}
+	if pageInfo.DeletedAt != nil {
+		return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+	}
+
+	var count int
+	err = db.QueryRowContext(
+		ctx,
+		"SELECT COUNT(*) FROM revisions WHERE page_id=$1",
+		pageUUID).Scan(&count)
+	if count != 0 && err != nil {
+		return nil, err
+	}
+	count -= ind
+	if count <= 0 {
+		return revs, nil
+	}
+
+	uuids, err := db.QueryContext(
+		ctx,
+		"SELECT uuid FROM revisions WHERE page_id=$1",
+		pageUUID)
+	if err != nil {
+		return nil, err
+	}
+	for range ind {
+		uuids.Next()
+	}
+
+	for i := range revs {
+		uuids.Next()
+		if uuids == nil {
+			break
+		}
+		var id uuid.UUID
+		uuids.Scan(&id)
+		revInfo := database.GetRevisionInfo(ctx, db, id)
+		revs[i] = *revInfo
+	}
+	
+	return revs, nil
+}
+
