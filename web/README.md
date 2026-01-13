@@ -29,3 +29,10 @@ This service starts an HTTP server on port `:8080`
 
 *Note: I apologize for the awful web UI. I hate webpage design and CSS, so I made an LLM do my tailwind. Please don't crucify me*
 
+## Pages to try
+
+I think these are the only ones that do anything right now.
+
+- `/pages/dan-boone`
+- `/pages/newsies`
+
