@@ -12,7 +12,7 @@ Each service is located in its own directory.
 
 Inside each service directory is a `README.md` for info on deploying and using that service.
 
-- [Web Server](./web#readme)
+- [Web Server](./web/README.md)
 - [API Layer](api-layer#readme)
 - [Wiki](wiki#readme)
 - [Wiki Database](wiki-db#readme)
