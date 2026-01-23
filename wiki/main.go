@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"wiki/database"
 	"wiki/requests"
+	"wiki/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,7 +41,7 @@ func main() {
 			pages, err = requests.GetPages(ctx, db, ind, num)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error": err,
+					"error": err.Error(),
 				})
 			}
 		} else {
@@ -84,7 +86,7 @@ func main() {
 		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err,
+										"error": err.Error(),
 									})
 			return
 		}
@@ -100,10 +102,45 @@ func main() {
 		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err,
+										"error": err.Error(),
 									})
 		}
 		c.JSON(http.StatusOK, revision)
+	})
+
+	// POST
+
+	r.POST("/pages/:id/revisions", func(c *gin.Context) {
+		var revReq utils.RevisionRequest
+		err := c.Request.ParseMultipartForm(32 << 20)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		file, err := c.FormFile("new_page")
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		f, err := file.Open()
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		defer f.Close()
+		newPageBytes, err := io.ReadAll(f)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		revReq.PageId = c.PostForm("page_id")
+		revReq.Author = c.PostForm("author")
+		revReq.NewPage = string(newPageBytes)
+
+		err = requests.PostRevision(ctx, db, dataDir, revReq)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+										"error": err.Error(),
+									})
+		}
+
+		c.Status(http.StatusOK)
 	})
 	
 	//etcTesting(db, dataDir)

@@ -10,13 +10,14 @@ import (
 	"strconv"
 	"wiki/database"
 	"wiki/filesystem"
+	"wiki/utils"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/google/uuid"
 )
 
-func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, error) {
-	var page Page
+func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.Page, error) {
+	var page utils.Page
 	var info *database.PageInfo
 	var content string
 	var lastRev *database.RevInfo
@@ -27,23 +28,23 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 	if err = uuid.Validate(id); err == nil {
 		pageId, err = uuid.Parse(id)
 		if err != nil {
-			return Page{}, err
+			return utils.Page{}, err
 		}
 	} else {
 		pageId, err = database.GetPageUUID(ctx, db, id)
 		if err != nil {
-			return Page{}, err
+			return utils.Page{}, err
 		}
 	}
 
 	info, err = database.GetPageInfo(ctx, db, pageId)
 	if err != nil {
-		return Page{}, err
+		return utils.Page{}, err
 	}
 
 	content, err = filesystem.GetPageContent(dataDir, pageId)
 	if err != nil {
-		return Page{}, err
+		return utils.Page{}, err
 	}
 
 
@@ -53,10 +54,12 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (Page, 
 		lastRev = &database.RevInfo{}
 	}
 
-	page = Page{info.UUID, info.Slug, info.Name, info.ArchiveDate, info.DeletedAt, lastRev.UUID, lastRev.DateTime, content}
+	page = utils.Page{UUID: info.UUID, Slug: info.Slug, Name: info.Name, ArchiveDate: info.ArchiveDate, 
+					DeletedAt: info.DeletedAt, LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime, 
+					Content: content}
 
 	if page.DeletedAt != nil {
-		return Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
+		return utils.Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
 	}
 	
 
@@ -158,25 +161,25 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int
 	return pages, nil
 }
 
-func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) (Revision, error) {
+func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) (utils.Revision, error) {
 	var err error
-	var rev = Revision{}
+	var rev = utils.Revision{}
 
 	if err := uuid.Validate(revId); err != nil {
-		return Revision{}, err
+		return utils.Revision{}, err
 	}
 	rev.UUID, err = uuid.Parse(revId)
 	if err != nil {
-		return Revision{}, err
+		return utils.Revision{}, err
 	}
 
 	revInfo := database.GetRevisionInfo(ctx, db, rev.UUID)
 	pageInfo, err := database.GetPageInfo(ctx, db, *revInfo.PageId)
 	if err != nil {
-		return Revision{}, err
+		return utils.Revision{}, err
 	}
 	if pageInfo.DeletedAt != nil {
-		return Revision{}, errors.New("404")
+		return utils.Revision{}, errors.New("404")
 	}
 	rev.PageId = *revInfo.PageId
 	rev.Name = pageInfo.Name
@@ -185,11 +188,11 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
 	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
 	if err != nil {
-		return Revision{}, err
+		return utils.Revision{}, err
 	}
 	rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
 	if err != nil {
-		return Revision{}, err
+		return utils.Revision{}, err
 	}
 
 	// i hope and pray that this works
@@ -197,11 +200,11 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	for _, r := range missingRevs {
 		revContent, err := filesystem.GetRevisionContent(dataDir, *r.UUID)
 		if err != nil {
-			return Revision{}, err
+			return utils.Revision{}, err
 		}
 		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
 		if err != nil {
-			return Revision{}, fmt.Errorf("couldn't parse revision: %w", err)
+			return utils.Revision{}, fmt.Errorf("couldn't parse revision: %w", err)
 		}
 		if len(files) == 0 {
 			continue
@@ -212,9 +215,9 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		err = gitdiff.Apply(&dst, src, files[0])
 		if err != nil {
 			if errors.Is(err, &gitdiff.Conflict{}) {
-				return Revision{}, fmt.Errorf("conflict while applying revision: %w", err)
+				return utils.Revision{}, fmt.Errorf("conflict while applying revision: %w", err)
 			}
-			return Revision{}, fmt.Errorf("applying revision: %w", err)
+			return utils.Revision{}, fmt.Errorf("applying revision: %w", err)
 		}
 		rev.Content = dst.String()
 	}

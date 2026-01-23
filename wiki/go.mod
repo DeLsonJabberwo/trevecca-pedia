@@ -3,6 +3,7 @@ module wiki
 go 1.25.5
 
 require (
+	github.com/aymanbagabas/go-udiff v0.3.1
 	github.com/bluekeyes/go-gitdiff v0.8.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
