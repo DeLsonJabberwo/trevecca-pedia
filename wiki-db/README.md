@@ -9,7 +9,7 @@ docker compose up -d --force-recreate
 
 To stop:
 ```
-docker compose down
+docker compose down --volumes
 ```
 
 To interact, using `psql`:

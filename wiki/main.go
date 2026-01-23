@@ -120,9 +120,15 @@ func main() {
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 		}
-		f, _ := file.Open()
+		f, err := file.Open()
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
 		defer f.Close()
-		newPageBytes, _ := io.ReadAll(f)
+		newPageBytes, err := io.ReadAll(f)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
 		revReq.PageId = c.PostForm("page_id")
 		revReq.Author = c.PostForm("author")
 		revReq.NewPage = string(newPageBytes)
@@ -133,6 +139,8 @@ func main() {
 										"error": err.Error(),
 									})
 		}
+
+		c.Status(http.StatusOK)
 	})
 	
 	//etcTesting(db, dataDir)
