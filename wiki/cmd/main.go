@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -142,8 +141,6 @@ func main() {
 
 		c.Status(http.StatusOK)
 	})
-	
-	//etcTesting(db, dataDir)
 
 	r.Run(":9454")
 }
@@ -160,24 +157,5 @@ func setup() (context.Context, *sql.DB, string) {
 	dataDir := filepath.Join("..", "wiki-fs")
 
 	return ctx, db, dataDir
-}
-
-func etcTesting(db *sql.DB, dataDir string) {
-	fmt.Println()
-	fmt.Println()
-	log.Printf("Etc. Testing...\n")
-	fmt.Println()
-	testConnection(db)
-
-	fmt.Println()
-	log.Printf("Testing File System...\n")
-
-
-	fmt.Println()
-	log.Printf("testGetPage(dataDir)\n")
-	testGetPage(dataDir)
-
-	fmt.Println()
-	fmt.Println()
 }
 
