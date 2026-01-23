@@ -4,7 +4,7 @@
 
 Set up go:
 ```
-go get wiki
+go get wiki/cmd
 ```
 
 Using air in the `wiki` directory:
