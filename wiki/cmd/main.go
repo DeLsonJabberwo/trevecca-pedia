@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"time"
 	"wiki/database"
 	"wiki/requests"
 	"wiki/utils"
@@ -85,8 +86,8 @@ func main() {
 		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err.Error(),
-									})
+				"error": err.Error(),
+			})
 			return
 		}
 		c.JSON(http.StatusOK, revisions)
@@ -101,8 +102,8 @@ func main() {
 		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err.Error(),
-									})
+				"error": err.Error(),
+			})
 		}
 		c.JSON(http.StatusOK, revision)
 	})
@@ -135,10 +136,55 @@ func main() {
 		err = requests.PostRevision(ctx, db, dataDir, revReq)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-										"error": err.Error(),
-									})
+				"error": err.Error(),
+			})
 		}
 
+		c.Status(http.StatusOK)
+	})
+
+	r.POST("/pages/new", func(c *gin.Context) {
+		var newPageReq utils.NewPageRequest
+		err := c.Request.ParseMultipartForm(32 << 20)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		file, err := c.FormFile("new_page")
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		f, err := file.Open()
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		defer f.Close()
+		newPageBytes, err := io.ReadAll(f)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+		newPageReq.Slug = c.PostForm("slug")
+		newPageReq.Name = c.PostForm("name")
+		newPageReq.Author = c.PostForm("author")
+
+		// Handle optional archive_date
+		archiveDateStr := c.PostForm("archive_date")
+		if archiveDateStr != "" {
+			archiveDate, err := time.Parse("2006-01-02", archiveDateStr)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error": "invalid archive_date format, expected YYYY-MM-DD",
+				})
+				return
+			}
+			newPageReq.ArchiveDate = &archiveDate
+		}
+
+		newPageReq.Content = string(newPageBytes)
+
+		err = utils.CreateNewPage(ctx, db, dataDir, newPageReq)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
 		c.Status(http.StatusOK)
 	})
 
@@ -158,4 +204,3 @@ func setup() (context.Context, *sql.DB, string) {
 
 	return ctx, db, dataDir
 }
-
