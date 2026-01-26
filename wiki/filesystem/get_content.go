@@ -1,34 +1,46 @@
 package filesystem
 
 import (
-	"fmt"
+	"context"
+	"database/sql"
 	"os"
-	"path/filepath"
 
 	"github.com/google/uuid"
 )
 
-func GetPageContent(dataDir string, pageId uuid.UUID) (string, error) {
-	content, err := os.ReadFile(filepath.Join(dataDir, "pages", fmt.Sprintf("%s.md", pageId)))
+func GetPageContent(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID) (string, error) {
+	filename, err := GetPageFilename(ctx, db, dataDir, pageId.String())
+	if err != nil {
+		return "", err
+	}
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
 	return string(content), nil
 }
 
-func GetRevisionContent(dataDir string, revId uuid.UUID) (string, error) {
+func GetRevisionContent(ctx context.Context, db *sql.DB, dataDir string, revId uuid.UUID) (string, error) {
 	if revId == uuid.Nil {
 		return "", nil
 	}
-	content, err := os.ReadFile(filepath.Join(dataDir, "revisions", fmt.Sprintf("%s.txt", revId)))
+	filename, err := GetRevisionFilename(ctx, db, dataDir, revId)
+	if err != nil {
+		return "", err
+	}
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
 	return string(content), nil
 }
 
-func GetSnapshotContent(dataDir string, snapId uuid.UUID) (string, error) {
-	content, err := os.ReadFile(filepath.Join(dataDir, "snapshots", fmt.Sprintf("%s.md", snapId)))
+func GetSnapshotContent(ctx context.Context, db *sql.DB, dataDir string, snapId uuid.UUID) (string, error) {
+	filename, err := GetSnapshotFilename(ctx, db, dataDir, snapId)
+	if err != nil {
+		return "", err
+	}
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}

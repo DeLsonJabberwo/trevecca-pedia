@@ -42,7 +42,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 		return utils.Page{}, err
 	}
 
-	content, err = filesystem.GetPageContent(dataDir, pageId)
+	content, err = filesystem.GetPageContent(ctx, db, dataDir, pageId)
 	if err != nil {
 		return utils.Page{}, err
 	}
@@ -190,7 +190,7 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	if err != nil {
 		return utils.Revision{}, err
 	}
-	rev.Content, err = filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
+	rev.Content, err = filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
 	if err != nil {
 		return utils.Revision{}, err
 	}
@@ -198,7 +198,7 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	// i hope and pray that this works
 	// update: it worked. most errors were elsewhere :)
 	for _, r := range missingRevs {
-		revContent, err := filesystem.GetRevisionContent(dataDir, *r.UUID)
+		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
 		if err != nil {
 			return utils.Revision{}, err
 		}
