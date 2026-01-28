@@ -1,0 +1,35 @@
+--- ../wiki-fs/pages/1e5430e8-b398-4ed8-986e-71a4ade8228d.md
++++ ../wiki-fs/pages/1e5430e8-b398-4ed8-986e-71a4ade8228d.md
+@@ -0,0 +1,31 @@
++# History
++
++Trevecca History
++
++For more than a century, Trevecca Nazarene University has been meeting the educational needs of students.
++
++From its earliest beginnings in 1901 as a pastor’s training class for Christian workers to its modern role as a university, Trevecca’s focus has been to provide higher education within the context of a Christian community.
++
++The name Trevecca means House of Rebecca or \"a binding together in love.\" Trevecka is the name of a school, a castle, and a village in Wales (all in the same area). The school, established in 1768 by Lady Huntingdon, was an effort to “bring together” followers of John Calvin and John Wesley. Trevecca’s founder, J. O. McClurkan, probably chose that name because he, too, saw the value of both ways of thinking and because he believed that name was appropriate for a nonsectarian holiness school.
++
++## A brief history timeline of Trevecca:
++
++- **1901**: The Reverend J. O. McClurkan, a Cumberland Presbyterian minister, began teaching a small group of parishioners who wanted to be more effective Christian workers. That group grew, and later that year McClurkan announced the establishment of the Literary and Bible Training School for Christian Workers.
++- **1911**: The curriculum was enlarged and the name changed to Trevecca College, a name taken from an institution started in Wales in 1768 during the Wesleyan revival. This school was located on part of what is now the Ryman Auditorium property in downtown Nashville.
++- **1914**: The College was moved from downtown Nashville to a site on Gallatin Road in East Nashville.
++- **1917**: Trevecca became an official college of the Church of the Nazarene.
++- **1935**: Trevecca was established at its present location on Murfreesboro Road in southeast Nashville.
++- **1942**: Trevecca graduated its first four-year class.
++- **1969**: Trevecca earned accreditation from Southern Association of Schools.
++- **1984**: Master’s degree programs in education were added.
++- **1987**: Master’s degrees in religion were added. Trevecca began the Management and Human Relations Program, Middle Tennessee’s first degree-completion program.
++- **1992**: Master’s degrees in organizational management were added.
++- **1995**: The Board of Trustees voted to change the name of Trevecca Nazarene College to Trevecca Nazarene University.
++- **1999**: The doctorate in education (EdD) was added.
++- **2007**: A second doctorate was added, the EdD in clinical counseling.
++- **2011**: Trevecca offered its first PhD after the Southern Association of Colleges and Schools approved making the EdD in clinical counseling a PhD.
++- **2015**: Formed the School of Graduate and Continuing Studies.
++- **2017**: Crossed the milestone of 1,000+ Trevecca online students.
++
++---
++Source: https://www.trevecca.edu/about/history
+\ No newline at end of file

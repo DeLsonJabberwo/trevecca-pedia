@@ -1,4 +1,4 @@
-package utils
+package database
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"wiki/database"
 
 	"github.com/google/uuid"
 )
@@ -19,7 +18,7 @@ func GetUUID(ctx context.Context, db *sql.DB, id string) (uuid.UUID, error) {
 			return uuid.UUID{}, err
 		}
 	} else {
-		pageUUID, err = database.GetPageUUID(ctx, db, id)
+		pageUUID, err = GetPageUUID(ctx, db, id)
 		if err != nil {
 			return uuid.UUID{}, errors.New(strconv.Itoa(http.StatusNotFound))
 		}

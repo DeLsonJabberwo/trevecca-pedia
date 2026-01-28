@@ -96,7 +96,7 @@ func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageI
 	if err != nil {
 		return "", err
 	}
-	revContent, err := filesystem.GetSnapshotContent(dataDir, lastSnap.UUID)
+	revContent, err := filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +104,7 @@ func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageI
 	// i hope and pray that this works
 	// update: it worked. most errors were elsewhere :)
 	for _, r := range missingRevs {
-		revContent, err := filesystem.GetRevisionContent(dataDir, *r.UUID)
+		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
 		if err != nil {
 			return "", err
 		}

@@ -1,0 +1,38 @@
+--- ../wiki-fs/pages/f27287a0-06c0-4b01-8380-fb2ba3a318a8.md
++++ ../wiki-fs/pages/f27287a0-06c0-4b01-8380-fb2ba3a318a8.md
+@@ -0,0 +1,34 @@
++# Accreditation
++
++Trevecca Nazarene University is accredited by the Southern Association of Colleges and Schools Commission on Colleges (SACSCOC) to award certificates and associate, baccalaureate, masters, specialist, and doctoral degrees. Trevecca Nazarene University also may offer credentials such as certificates and diplomas at approved degree levels. Questions about the accreditation of Trevecca Nazarene University may be directed in writing to the Southern Association of Colleges and Schools Commission on Colleges at 1866 Southern Lane, Decatur, GA 30033-4097, by calling (404) 679-4500, or by using information available on SACSCOC’s website ([www.sacscoc.org](http://www.sacscoc.org)).
++
++The School of Education at Trevecca Nazarene University is accredited by the Council for the Accreditation of Educator Preparation (CAEP) following a very successful 2022 visit. This continued accreditation is at the initial teacher preparation and advanced preparation levels, and signifies that the education preparation provider (EPP) and its programs meet rigorous standards set forth by the professional education community. The program was initially accredited by the National Council for Accreditation of Teacher Education (NCATE)in 2009 and reaffirmed by NCATE in 2016. The teaching majors offered in collaboration with other University departments are approved by the Tennessee State Board of Education and are part of the CAEP accreditation. The next CAEP accreditation visit is scheduled for Fall 2029.
++
++The Trevecca Nazarene University Department of Nursing was initially approved by the Tennessee Board of Nursing in Spring 2023 and has obtained candidacy status for accreditation by the Accreditation Commission for Education of Nursing (ACEN) with final approval scheduled for May 2026. The Trevecca Bachelor of Science in Nursing (BSN) program allows a student the ability to earn a BSN degree in 4 years or 8 semesters with the goal of obtaining a Registered Nursing License after passing the National Council Licensure Examination (NCLEX). 
++
++Trevecca Nazarene is accredited by the National Association of Schools of Music (NASM). The University was initially accredited by NASM in 1976 and was last reaffirmed in 2024. The next accreditation visit and reaffirmation is scheduled for 2034-2035.
++
++The baccalaureate Social Work Program is accredited by the Council on Social Work Education (CWSE). The program was initially accredited in 2014 and was re-affirmed in 2018. The next accreditation visit is scheduled in October of 2026.
++
++At its March 2025 meeting, the Accreditation Review Commission on Education for the Physician Assistant, Inc. (ARC-PA) extended Accreditation-Probation status for the Trevecca Nazarene University Physician Assistant Program sponsored by Trevecca Nazarene University until its next review in March 2027. Probation accreditation is a temporary accreditation status initially of not less than two years. However, that period may be extended by the ARC-PA for up to an additional two years if the ARC-PA finds that the program is making substantial progress toward meeting all applicable standards but requires additional time to come into full compliance. Probation accreditation status is granted, at the sole discretion of the ARC-PA, when a program holding an accreditation status of Accreditation - Provisional or Accreditation - Continued does not, in the judgment of the ARC-PA, meet the Standards or when the capability of the program to provide an acceptable educational experience for its students is threatened. Once placed on probation, a program that fails to comply with accreditation requirements in a timely manner, as specified by the ARC-PA, may be scheduled for a focused site visit and is subject to having its accreditation withdrawn. Specific questions regarding the Program and its plans should be directed to the Program Director and/or the appropriate institutional official(s). The program’s accreditation history can be viewed on the ARC-PA website at: [www.arc-pa.org/accreditation-history-trevecca-nazarene-university/](https://www.arc-pa.org/accreditation-history-trevecca-nazarene-university/).
++
++The master’s and on-campus doctoral level Graduate Counseling Programs were first accredited by the Council for Accreditation of Counseling and Related Educational Programs (CACREP) on January 9, 2014 and will next be reviewed in October 31, 2032. The online doctoral level program has also been accredited by CACREP since 2022.  Accreditation documents are on file in the Office of Academic Affairs and may be reviewed upon request.
++
++Trevecca is a member of the:
++
++- American Association of Colleges of Teacher Education
++- Association of Independent Liberal Arts Colleges of Teacher Education
++- Christian Adult Higher Education Association
++- Council for Christian Colleges and Universities
++- Council for the Advancement of Experiential Learning
++- Council of Independent Colleges
++- Council on Undergraduate Research
++- Mid-South Educational Research Association
++- National Association of Independent Colleges and Universities
++- Tennessee College Association
++- Tennessee Association of Colleges for Teacher Education
++- Tennessee Association of Independent Liberal Arts Colleges of Teacher Education
++- Tennessee Independent College and University Association
++
++---
++Source: https://www.trevecca.edu/about/accreditation
+\ No newline at end of file
