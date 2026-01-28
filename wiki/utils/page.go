@@ -17,3 +17,11 @@ type Page struct {
 	Content			string		`json:"content"`
 }
 
+type NewPageRequest struct {
+	Slug			string		`json:"slug"`
+	Name			string		`json:"name"`
+	Author			string		`json:"author"`
+	ArchiveDate		*time.Time	`json:"archive_date"`
+	Content			string		`json:"content"`
+}
+
