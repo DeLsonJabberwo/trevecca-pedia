@@ -1,4 +1,4 @@
-package handlers
+package wiki
 
 import (
 	"api-layer/config"
