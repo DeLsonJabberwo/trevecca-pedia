@@ -38,10 +38,10 @@ So, calls to the `wiki` service begin with: `/v1/wiki`
 
 #### `/pages/new`
 **Description:** Creates a new page entry with the submitted info.  
-This is implemented using a multipart form, with the fields being passed in as form data.  This is useful because it allows the `new_page` file to be passed in as a file, rather than just a string.
-**Type:** `POST`
-**Arguments:** None
-**Fields:**
+This is implemented using a multipart form, with the fields being passed in as form data.  This is useful because it allows the `new_page` file to be passed in as a file, rather than just a string.  
+**Type:** `POST`  
+**Arguments:** None  
+**Fields:**  
 `slug`: the unique, human-readable identifier for the page  
     - all lowercase, kebab-case  
 `name`: title of the page  
