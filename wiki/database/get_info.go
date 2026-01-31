@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-	wikierrors "wiki/errors"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"

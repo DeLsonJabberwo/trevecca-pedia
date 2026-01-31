@@ -25,29 +25,39 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	if err = uuid.Validate(id); err == nil {
 		pageId, err = uuid.Parse(id)
 		if err != nil {
-			return utils.Page{}, err
+			return utils.Page{}, wikierrors.InvalidID(err)
 		}
 	} else {
 		pageId, err = database.GetPageUUID(ctx, db, id)
+		if err == sql.ErrNoRows {
+			return utils.Page{}, wikierrors.PageNotFound()
+		}
 		if err != nil {
-			return utils.Page{}, err
+			return utils.Page{}, wikierrors.DatabaseError(err)
 		}
 	}
 
 	info, err = database.GetPageInfo(ctx, db, pageId)
 	if err != nil {
-		return utils.Page{}, err
+		return utils.Page{}, wikierrors.DatabaseError(err)
+	}
+
+	if info.DeletedAt != nil {
+		return utils.Page{}, wikierrors.PageDeleted()
 	}
 
 	content, err = filesystem.GetPageContent(ctx, db, dataDir, pageId)
 	if err != nil {
-		return utils.Page{}, err
+		return utils.Page{}, wikierrors.FilesystemError(err)
 	}
 
 	if info.LastRevisionId != nil {
 		lastRev, err = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
+		if err == sql.ErrNoRows {
+			return utils.Page{}, wikierrors.RevisionNotFound()
+		}
 		if err != nil {
-			return utils.Page{}, err
+			return utils.Page{}, wikierrors.DatabaseError(err)
 		}
 	} else {
 		lastRev = &database.RevInfo{}
@@ -56,10 +66,6 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	page = utils.Page{UUID: info.UUID, Slug: info.Slug, Name: info.Name, ArchiveDate: info.ArchiveDate,
 		DeletedAt: info.DeletedAt, LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime,
 		Content: content}
-
-	if page.DeletedAt != nil {
-		return utils.Page{}, wikierrors.PageDeleted(pageId.String())
-	}
 
 	return page, nil
 }
@@ -70,7 +76,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	var count int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages").Scan(&count)
 	if count != 0 && err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	count -= ind
 	if count <= 0 {
@@ -80,7 +86,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	uuids, err := db.QueryContext(ctx,
 		"SELECT uuid FROM pages")
 	if err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	for range ind {
 		uuids.Next()
@@ -98,7 +104,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 			continue
 		}
 		if err != nil {
-			return nil, err
+			return nil, wikierrors.DatabaseError(err)
 		}
 		if pageInfo.DeletedAt != nil {
 			i--
@@ -120,8 +126,8 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int
 		JOIN page_categories ON pages.uuid = page_categories.page_id
 		WHERE page_categories.category=$1`,
 		cat).Scan(&count)
-	if err != nil {
-		return nil, err
+	if count != 0 && err != nil {
+		return nil, wikierrors.DatabaseError(err)
 	}
 	count -= ind
 	if count <= 0 {
@@ -135,7 +141,7 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int
 		WHERE page_categories.category=$1`,
 		cat)
 	if err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	for range ind {
 		uuids.Next()
@@ -164,45 +170,54 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	var rev = utils.Revision{}
 
 	if err := uuid.Validate(revId); err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.InvalidID(err)
 	}
 	rev.UUID, err = uuid.Parse(revId)
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.InvalidID(err)
 	}
 
 	revInfo, err := database.GetRevisionInfo(ctx, db, rev.UUID)
+	if err == sql.ErrNoRows {
+		return utils.Revision{}, wikierrors.RevisionNotFound()
+	}
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.DatabaseError(err)
 	}
 	if revInfo == nil || revInfo.PageId == nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.RevisionNotFound()
 	}
 	pageInfo, err := database.GetPageInfo(ctx, db, *revInfo.PageId)
+	if err == sql.ErrNoRows {
+		return utils.Revision{}, wikierrors.PageNotFound()
+	}
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.DatabaseError(err)
 	}
 	if pageInfo.DeletedAt != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.PageDeleted()
 	}
 	rev.PageId = *revInfo.PageId
 	rev.Name = pageInfo.Name
 	rev.RevDateTime = *revInfo.DateTime
 
 	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	if err == sql.ErrNoRows{
+		return utils.Revision{}, wikierrors.SnapshotNotFound()
+	}
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.DatabaseError(err)
 	}
 	if lastSnap == nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.SnapshotNotFound()
 	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.DatabaseError(err)
 	}
 	rev.Content, err = filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
 	if err != nil {
-		return utils.Revision{}, err
+		return utils.Revision{}, wikierrors.FilesystemError(err)
 	}
 
 	// i hope and pray that this works
@@ -213,11 +228,11 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		}
 		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
 		if err != nil {
-			return utils.Revision{}, err
+			return utils.Revision{}, wikierrors.FilesystemError(err)
 		}
 		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
 		if err != nil {
-			return utils.Revision{}, err
+			return utils.Revision{}, wikierrors.InternalError(err)
 		}
 		if len(files) == 0 {
 			continue
@@ -228,9 +243,9 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		err = gitdiff.Apply(&dst, src, files[0])
 		if err != nil {
 			if errors.Is(err, &gitdiff.Conflict{}) {
-				return utils.Revision{}, err
+				return utils.Revision{}, wikierrors.RevisionConflict(err)
 			}
-			return utils.Revision{}, err
+			return utils.Revision{}, wikierrors.InternalError(err)
 		}
 		rev.Content = dst.String()
 	}
@@ -245,21 +260,27 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 	if err := uuid.Validate(pageId); err == nil {
 		pageUUID, err = uuid.Parse(pageId)
 		if err != nil {
-			return nil, err
+			return nil, wikierrors.InvalidID(err)
 		}
 	} else {
 		pageUUID, err = database.GetPageUUID(ctx, db, pageId)
+		if err == sql.ErrNoRows {
+			return nil, wikierrors.PageNotFound()
+		}
 		if err != nil {
-			return nil, err
+			return nil, wikierrors.DatabaseError(err)
 		}
 	}
 
 	pageInfo, err := database.GetPageInfo(ctx, db, pageUUID)
+	if err == sql.ErrNoRows {
+		return nil, wikierrors.PageNotFound()
+	}
 	if err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	if pageInfo.DeletedAt != nil {
-		return nil, err
+		return nil, wikierrors.PageDeleted()
 	}
 
 	var count int
@@ -268,7 +289,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		"SELECT COUNT(*) FROM revisions WHERE page_id=$1",
 		pageUUID).Scan(&count)
 	if count != 0 && err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	count -= ind
 	if count <= 0 {
@@ -280,7 +301,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		"SELECT uuid FROM revisions WHERE page_id=$1",
 		pageUUID)
 	if err != nil {
-		return nil, err
+		return nil, wikierrors.DatabaseError(err)
 	}
 	for range ind {
 		uuids.Next()
@@ -295,7 +316,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		uuids.Scan(&id)
 		revInfo, err := database.GetRevisionInfo(ctx, db, id)
 		if err != nil {
-			return nil, err
+			return nil, wikierrors.DatabaseError(err)
 		}
 		revs[i] = *revInfo
 	}
