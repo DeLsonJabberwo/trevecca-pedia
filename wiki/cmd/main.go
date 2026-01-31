@@ -43,6 +43,7 @@ func main() {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error": err.Error(),
 				})
+				return
 			}
 		} else {
 			pages, err = requests.GetPagesCategory(ctx, db, cat, ind, num)
@@ -50,6 +51,7 @@ func main() {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error": err,
 				})
+				return
 			}
 		}
 		c.JSON(http.StatusOK, pages)
@@ -104,6 +106,7 @@ func main() {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
+			return
 		}
 		c.JSON(http.StatusOK, revision)
 	})
@@ -115,19 +118,23 @@ func main() {
 		err := c.Request.ParseMultipartForm(32 << 20)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		file, err := c.FormFile("new_page")
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		f, err := file.Open()
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		defer f.Close()
 		newPageBytes, err := io.ReadAll(f)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		revReq.PageId = c.PostForm("page_id")
 		revReq.Author = c.PostForm("author")
@@ -138,6 +145,7 @@ func main() {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
+			return
 		}
 
 		c.Status(http.StatusOK)
@@ -148,19 +156,23 @@ func main() {
 		err := c.Request.ParseMultipartForm(32 << 20)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		file, err := c.FormFile("new_page")
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		f, err := file.Open()
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		defer f.Close()
 		newPageBytes, err := io.ReadAll(f)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		newPageReq.Slug = c.PostForm("slug")
 		newPageReq.Name = c.PostForm("name")
@@ -184,6 +196,7 @@ func main() {
 		err = utils.CreateNewPage(ctx, db, dataDir, newPageReq)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
+			return
 		}
 		c.Status(http.StatusOK)
 	})

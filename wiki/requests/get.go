@@ -5,10 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
-	"net/http"
-	"strconv"
 	"wiki/database"
+	wikierrors "wiki/errors"
 	"wiki/filesystem"
 	"wiki/utils"
 
@@ -23,7 +21,6 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	var lastRev *database.RevInfo
 	var pageId uuid.UUID
 	var err error
-	
 
 	if err = uuid.Validate(id); err == nil {
 		pageId, err = uuid.Parse(id)
@@ -47,21 +44,22 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 		return utils.Page{}, err
 	}
 
-
 	if info.LastRevisionId != nil {
-		lastRev = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
+		lastRev, err = database.GetRevisionInfo(ctx, db, *info.LastRevisionId)
+		if err != nil {
+			return utils.Page{}, err
+		}
 	} else {
 		lastRev = &database.RevInfo{}
 	}
 
-	page = utils.Page{UUID: info.UUID, Slug: info.Slug, Name: info.Name, ArchiveDate: info.ArchiveDate, 
-					DeletedAt: info.DeletedAt, LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime, 
-					Content: content}
+	page = utils.Page{UUID: info.UUID, Slug: info.Slug, Name: info.Name, ArchiveDate: info.ArchiveDate,
+		DeletedAt: info.DeletedAt, LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime,
+		Content: content}
 
 	if page.DeletedAt != nil {
-		return utils.Page{}, errors.New(strconv.Itoa(http.StatusNotFound))
+		return utils.Page{}, wikierrors.PageDeleted(pageId.String())
 	}
-	
 
 	return page, nil
 }
@@ -80,7 +78,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	}
 
 	uuids, err := db.QueryContext(ctx,
-				"SELECT uuid FROM pages")
+		"SELECT uuid FROM pages")
 	if err != nil {
 		return nil, err
 	}
@@ -173,19 +171,31 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		return utils.Revision{}, err
 	}
 
-	revInfo := database.GetRevisionInfo(ctx, db, rev.UUID)
+	revInfo, err := database.GetRevisionInfo(ctx, db, rev.UUID)
+	if err != nil {
+		return utils.Revision{}, err
+	}
+	if revInfo == nil || revInfo.PageId == nil {
+		return utils.Revision{}, err
+	}
 	pageInfo, err := database.GetPageInfo(ctx, db, *revInfo.PageId)
 	if err != nil {
 		return utils.Revision{}, err
 	}
 	if pageInfo.DeletedAt != nil {
-		return utils.Revision{}, errors.New("404")
+		return utils.Revision{}, err
 	}
 	rev.PageId = *revInfo.PageId
 	rev.Name = pageInfo.Name
 	rev.RevDateTime = *revInfo.DateTime
 
-	lastSnap := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
+	if err != nil {
+		return utils.Revision{}, err
+	}
+	if lastSnap == nil {
+		return utils.Revision{}, err
+	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
 	if err != nil {
 		return utils.Revision{}, err
@@ -198,13 +208,16 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	// i hope and pray that this works
 	// update: it worked. most errors were elsewhere :)
 	for _, r := range missingRevs {
+		if r.UUID == nil {
+			continue
+		}
 		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
 		if err != nil {
 			return utils.Revision{}, err
 		}
 		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
 		if err != nil {
-			return utils.Revision{}, fmt.Errorf("couldn't parse revision: %w", err)
+			return utils.Revision{}, err
 		}
 		if len(files) == 0 {
 			continue
@@ -215,9 +228,9 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		err = gitdiff.Apply(&dst, src, files[0])
 		if err != nil {
 			if errors.Is(err, &gitdiff.Conflict{}) {
-				return utils.Revision{}, fmt.Errorf("conflict while applying revision: %w", err)
+				return utils.Revision{}, err
 			}
-			return utils.Revision{}, fmt.Errorf("applying revision: %w", err)
+			return utils.Revision{}, err
 		}
 		rev.Content = dst.String()
 	}
@@ -237,7 +250,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 	} else {
 		pageUUID, err = database.GetPageUUID(ctx, db, pageId)
 		if err != nil {
-			return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+			return nil, err
 		}
 	}
 
@@ -246,7 +259,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		return nil, err
 	}
 	if pageInfo.DeletedAt != nil {
-		return nil, errors.New(strconv.Itoa(http.StatusNotFound))
+		return nil, err
 	}
 
 	var count int
@@ -280,10 +293,12 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		}
 		var id uuid.UUID
 		uuids.Scan(&id)
-		revInfo := database.GetRevisionInfo(ctx, db, id)
+		revInfo, err := database.GetRevisionInfo(ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
 		revs[i] = *revInfo
 	}
-	
+
 	return revs, nil
 }
-
