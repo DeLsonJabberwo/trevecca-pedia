@@ -181,6 +181,7 @@ func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]Re
 	if err != nil {
 		return nil, err
 	}
+	defer revIds.Close()
 
 	for i := 0; revIds.Next(); i++ {
 		var id uuid.UUID
