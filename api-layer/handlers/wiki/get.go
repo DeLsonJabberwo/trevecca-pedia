@@ -24,13 +24,14 @@ func GetPages(c *gin.Context) {
 	res, err := http.Get(fmt.Sprintf("%s/pages?category=%s&index=%d&num=%d",
 							config.WikiServiceURL, catQuery, ind, num))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages."})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
+		return
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to read response"})
         return
 	}
 
@@ -68,13 +69,14 @@ func GetPageRevisions(c *gin.Context) {
 	res, err := http.Get(fmt.Sprintf("%s/pages/%s/revisions?index=%d&num=%d",
 							config.WikiServiceURL, id, ind, num))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages."})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
+		return
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to read response"})
         return
 	}
 
@@ -86,13 +88,14 @@ func GetPageRevision(c *gin.Context) {
 	revId := c.Param("rev")
 	res, err := http.Get(fmt.Sprintf("%s/pages/%s/revisions/%s", config.WikiServiceURL, id, revId))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages."})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
+		return
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to read response"})
         return
 	}
 

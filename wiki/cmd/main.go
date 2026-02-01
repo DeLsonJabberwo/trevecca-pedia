@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	"wiki/database"
+	wikierrors "wiki/errors"
 	"wiki/requests"
 	"wiki/utils"
 
@@ -40,16 +41,26 @@ func main() {
 		if cat == 0 {
 			pages, err = requests.GetPages(ctx, db, ind, num)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error": err.Error(),
+				werr, is := wikierrors.AsWikiError(err)
+				if !is {
+					werr = wikierrors.InternalError(err)
+				}
+				c.AbortWithStatusJSON(werr.Code, gin.H{
+					"error": werr.Details,
 				})
+				return
 			}
 		} else {
 			pages, err = requests.GetPagesCategory(ctx, db, cat, ind, num)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error": err,
+				werr, is := wikierrors.AsWikiError(err)
+				if !is {
+					werr = wikierrors.InternalError(err)
+				}
+				c.AbortWithStatusJSON(werr.Code, gin.H{
+					"error": werr.Details,
 				})
+				return
 			}
 		}
 		c.JSON(http.StatusOK, pages)
@@ -58,12 +69,14 @@ func main() {
 	r.GET("/pages/:id", func(c *gin.Context) {
 		pageId := c.Param("id")
 		page, err := requests.GetPage(ctx, db, dataDir, pageId)
-		if err != nil && err.Error() == strconv.Itoa(http.StatusNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
 			return
 		}
 		c.JSON(http.StatusOK, page)
@@ -80,13 +93,13 @@ func main() {
 			num = 10
 		}
 		revisions, err := requests.GetRevisions(ctx, db, pageId, ind, num)
-		if err != nil && err.Error() == strconv.Itoa(http.StatusNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
 			})
 			return
 		}
@@ -96,14 +109,15 @@ func main() {
 	r.GET("/pages/:id/revisions/:rev", func(c *gin.Context) {
 		revId := c.Param("rev")
 		revision, err := requests.GetRevision(ctx, db, dataDir, revId)
-		if err != nil && err.Error() == "404" {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
 			})
+			return
 		}
 		c.JSON(http.StatusOK, revision)
 	})
@@ -114,20 +128,34 @@ func main() {
 		var revReq utils.RevisionRequest
 		err := c.Request.ParseMultipartForm(32 << 20)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
 		}
 		file, err := c.FormFile("new_page")
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
 		}
 		f, err := file.Open()
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			werr := wikierrors.FilesystemError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
 		}
 		defer f.Close()
 		newPageBytes, err := io.ReadAll(f)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			werr := wikierrors.InternalError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
 		}
 		revReq.PageId = c.PostForm("page_id")
 		revReq.Author = c.PostForm("author")
@@ -135,9 +163,14 @@ func main() {
 
 		err = requests.PostRevision(ctx, db, dataDir, revReq)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
 			})
+			return
 		}
 
 		c.Status(http.StatusOK)
@@ -147,20 +180,34 @@ func main() {
 		var newPageReq utils.NewPageRequest
 		err := c.Request.ParseMultipartForm(32 << 20)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
 		}
 		file, err := c.FormFile("new_page")
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
 		}
 		f, err := file.Open()
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			werr := wikierrors.FilesystemError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
 		}
 		defer f.Close()
 		newPageBytes, err := io.ReadAll(f)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			werr := wikierrors.InternalError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
 		}
 		newPageReq.Slug = c.PostForm("slug")
 		newPageReq.Name = c.PostForm("name")
@@ -172,7 +219,7 @@ func main() {
 			archiveDate, err := time.Parse("2006-01-02", archiveDateStr)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error": "invalid archive_date format, expected YYYY-MM-DD",
+					"error": "bad request format",
 				})
 				return
 			}
@@ -183,7 +230,14 @@ func main() {
 
 		err = utils.CreateNewPage(ctx, db, dataDir, newPageReq)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
 		}
 		c.Status(http.StatusOK)
 	})

@@ -91,7 +91,10 @@ func CreateSnapshot(ctx context.Context, db *sql.DB, dataDir string, pageId uuid
 }
 
 func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID, revId uuid.UUID) (string, error) {
-	lastSnap := database.GetMostRecentSnapshot(ctx, db, revId)
+	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, revId)
+	if err != nil {
+		return "", err
+	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, revId)
 	if err != nil {
 		return "", err

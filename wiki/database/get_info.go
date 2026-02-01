@@ -78,50 +78,69 @@ func GetPageRevisionsInfo(ctx context.Context, db *sql.DB, pageId uuid.UUID) ([]
 	return revs, nil
 }
 
-func GetRevisionInfo(ctx context.Context, db *sql.DB, revId uuid.UUID) *RevInfo {
+func GetRevisionInfo(ctx context.Context, db *sql.DB, revId uuid.UUID) (*RevInfo, error) {
 	var rev RevInfo
-	db.QueryRowContext(
+	err := db.QueryRowContext(
 				ctx,
 				"SELECT uuid, page_id, date_time, author FROM revisions WHERE uuid=$1",
 				revId).Scan(&rev.UUID, &rev.PageId, &rev.DateTime, &rev.Author)
-	return &rev
+	if err != nil {
+		return nil, err
+	}
+	return &rev, nil
 }
 
-func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) SnapInfo {
-	revInfo := GetRevisionInfo(ctx, db, revId)
+func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) (*SnapInfo, error) {
+	revInfo, err := GetRevisionInfo(ctx, db, revId)
+	if err != nil {
+		return nil, err
+	}
 	pageId := revInfo.PageId
 	var snapId uuid.UUID
 	var snap SnapInfo
 	var snapCount int
-	db.QueryRowContext(
+	err = db.QueryRowContext(
 		ctx,
 		`SELECT COUNT(*) FROM snapshots
 		WHERE page=$1`,
 		pageId).
 		Scan(&snapCount)
+	if err != nil {
+		return nil, err
+	}
 	if snapCount == 1 {
-		db.QueryRowContext(
+		err = db.QueryRowContext(
 			ctx,
 			`SELECT uuid FROM snapshots
 			WHERE page=$1`,
 			pageId).
 			Scan(&snapId)
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		db.QueryRowContext(
+		err = db.QueryRowContext(
 			ctx,
-			`SELECT uuid FROM snapshots
+			`SELECT snapshots.uuid FROM snapshots
 			JOIN revisions ON snapshots.revision = revisions.uuid
 			WHERE snapshots.page=$1
-			ORDER BY revisions.date_time`,
+			ORDER BY revisions.date_time
+			DESC`,
 			pageId).
 			Scan(&snapId)
+		if err != nil {
+			return nil, err
+		}
 	}
-	db.QueryRowContext(
+	err = db.QueryRowContext(
 		ctx,
 		"SELECT * FROM snapshots WHERE uuid=$1",
 		snapId).
 		Scan(&snap.UUID, &snap.Page, &snap.Revision)
-	return snap
+	if err != nil {
+		return nil, err
+	}
+	return &snap, nil
 }
 
 func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]RevInfo, error) {
@@ -129,35 +148,49 @@ func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]Re
 	var count int
 	var snapRevTime time.Time
 
-	snap := GetMostRecentSnapshot(ctx, db, revId)
+	snap, err := GetMostRecentSnapshot(ctx, db, revId)
+	if err != nil {
+		return nil, err
+	}
 	// shouldn't ever be nil, but I'll leave this here I guess
 	if snap.Revision == nil {
 		snapRevTime = time.Time{}
 	} else if *snap.Revision == revId {
 		return nil, nil
 	} else {
-		snap_rev := GetRevisionInfo(ctx, db, *snap.Revision)
+		snap_rev, err := GetRevisionInfo(ctx, db, *snap.Revision)
+		if err != nil {
+			return nil, err
+		}
 		snapRevTime = *snap_rev.DateTime
 	}
-	db.QueryRowContext(
+	err = db.QueryRowContext(
 		ctx,
 		"SELECT COUNT(*) FROM revisions WHERE date_time > $1",
 		snapRevTime).
 		Scan(&count)
+	if err != nil {
+		return nil, err
+	}
 	revs = make([]RevInfo, count)
 
 	revIds, err := db.QueryContext(
 				ctx,
-				"SELECT uuid FROM revisions WHERE date_time >  $1 ORDER BY date_time ASC",
+				"SELECT uuid FROM revisions WHERE date_time > $1 ORDER BY date_time ASC",
 				snapRevTime)
 	if err != nil {
 		return nil, err
 	}
+	defer revIds.Close()
 
 	for i := 0; revIds.Next(); i++ {
 		var id uuid.UUID
 		revIds.Scan(&id)
-		revs[i] = *GetRevisionInfo(ctx, db, id)
+		rev, err := GetRevisionInfo(ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		revs[i] = *rev
 	}
 
 	return revs, nil

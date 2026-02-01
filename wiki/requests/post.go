@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"wiki/database"
 	"wiki/utils"
+	wikierrors "wiki/errors"
 
 	"github.com/aymanbagabas/go-udiff"
 )
@@ -32,32 +33,33 @@ func PostRevision(ctx context.Context, db *sql.DB, dataDir string, revReq utils.
 
 	rev.Content = diff
 
-	// TODO: implement snapshots
 	revId, err := utils.PushRevisionToDBFS(ctx, db, dataDir, revReq, rev.Content)
 	if err != nil {
-		fmt.Printf("Failure writing revision to db or fs: %s\n", err)
-		return err
+		return wikierrors.DatabaseFilesystemError(err)
 	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, revId)
 	if err != nil {
-		return err
+		return wikierrors.DatabaseError(err)
 	}
 	if len(missingRevs) >= 10 {
 		_, err := utils.CreateSnapshot(ctx, db, dataDir, rev.PageId, revId)
 		if err != nil {
-			return err
+			return wikierrors.DatabaseFilesystemError(err)
 		}
 	}
 
 
 	contentAtRev, err := utils.GetContentAtRevision(ctx, db, dataDir, rev.PageId, revId)
 	if err != nil {
-		return err
+		return wikierrors.DatabaseFilesystemError(err)
 	}
 	// also update the current page
 	pageFilename := fmt.Sprintf("%s.md", rev.PageId)
 	pageFilepath := filepath.Join(dataDir, "pages", pageFilename)
-	os.WriteFile(pageFilepath, []byte(contentAtRev), 0644)
+	err = os.WriteFile(pageFilepath, []byte(contentAtRev), 0644)
+	if err != nil {
+		return wikierrors.FilesystemError(err)
+	}
 	// and the database stuff
 
 	return nil
