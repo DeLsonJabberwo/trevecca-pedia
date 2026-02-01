@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -122,10 +121,11 @@ func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) (*S
 	} else {
 		err = db.QueryRowContext(
 			ctx,
-			`SELECT uuid FROM snapshots
+			`SELECT snapshots.uuid FROM snapshots
 			JOIN revisions ON snapshots.revision = revisions.uuid
 			WHERE snapshots.page=$1
-			ORDER BY revisions.date_time`,
+			ORDER BY revisions.date_time
+			DESC`,
 			pageId).
 			Scan(&snapId)
 		if err != nil {
