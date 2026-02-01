@@ -86,7 +86,7 @@ func GetRevisionInfo(ctx context.Context, db *sql.DB, revId uuid.UUID) (*RevInfo
 				"SELECT uuid, page_id, date_time, author FROM revisions WHERE uuid=$1",
 				revId).Scan(&rev.UUID, &rev.PageId, &rev.DateTime, &rev.Author)
 	if err != nil {
-		return nil, fmt.Errorf("database error getting revision: %w", err)
+		return nil, err
 	}
 	return &rev, nil
 }

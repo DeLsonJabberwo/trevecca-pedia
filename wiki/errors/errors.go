@@ -33,6 +33,7 @@ const (
 	internalErr			= "InternalServerError"
 	databaseErr         = "DatabaseError"
 	filesystemErr       = "FilesystemError"
+	dbfsErr				= "DatabaseFilesystemError"
 )
 
 // Error Constructors
@@ -131,6 +132,15 @@ func FilesystemError(err error) WikiError {
 		http.StatusInternalServerError,
 		filesystemErr,
 		"filesystem error",
+		err,
+	}
+}
+
+func DatabaseFilesystemError(err error) WikiError {
+	return WikiError{
+		http.StatusInternalServerError,
+		dbfsErr,
+		"database/filesystem error",
 		err,
 	}
 }
