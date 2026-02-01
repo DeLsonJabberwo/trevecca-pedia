@@ -98,7 +98,7 @@ func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) (*S
 	}
 	pageId := revInfo.PageId
 	var snapId uuid.UUID
-	var snap *SnapInfo
+	var snap SnapInfo
 	var snapCount int
 	err = db.QueryRowContext(
 		ctx,
@@ -140,7 +140,7 @@ func GetMostRecentSnapshot(ctx context.Context, db *sql.DB, revId uuid.UUID) (*S
 	if err != nil {
 		return nil, err
 	}
-	return snap, nil
+	return &snap, nil
 }
 
 func GetMissingRevisions(ctx context.Context, db *sql.DB, revId uuid.UUID) ([]RevInfo, error) {

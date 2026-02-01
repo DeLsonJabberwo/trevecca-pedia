@@ -23,7 +23,7 @@ func (w WikiError) Unwrap() error {
 // Error Types
 const (
 	pageNotFound     	= "PageNotFound"
-	revisonNotFound  	= "RevisionNotFound"
+	revisionNotFound  	= "RevisionNotFound"
 	snapshotNotFound 	= "SnapshotNotFound"
 	pageDeleted      	= "PageDeleted"
 	revisionDeleted  	= "RevisionDeleted"
@@ -49,7 +49,7 @@ func PageNotFound() WikiError {
 func RevisionNotFound() WikiError {
 	return WikiError{
 		http.StatusNotFound,
-		revisonNotFound,
+		revisionNotFound,
 		"revision not found",
 		nil,
 	}
@@ -176,7 +176,7 @@ func HasType(err error, errType string) bool {
 
 func IsNotFound(err error) bool {
 	return HasType(err, pageNotFound) ||
-		HasType(err, revisonNotFound) ||
+		HasType(err, revisionNotFound) ||
 		HasType(err, snapshotNotFound)
 }
 
