@@ -25,3 +25,8 @@ type NewPageRequest struct {
 	Content			string		`json:"content"`
 }
 
+type DeletePageRequest struct {
+	Slug			string		`json:"slug"`
+	User			string		`json:"user"`
+}
+

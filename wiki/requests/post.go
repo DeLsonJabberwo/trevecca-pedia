@@ -13,6 +13,40 @@ import (
 	"github.com/aymanbagabas/go-udiff"
 )
 
+func DeletePage(ctx context.Context, db *sql.DB, dataDir string, delReq utils.DeletePageRequest) error {
+	pageUUID, err := database.GetPageUUID(ctx, db, delReq.Slug)
+	if err != nil {
+		return wikierrors.DatabaseError(err)
+	}
+	pageInfo, err := database.GetPageInfo(ctx, db, pageUUID)
+	if err != nil {
+		return wikierrors.DatabaseError(err)
+	}
+
+	if pageInfo.DeletedAt != nil {
+		return wikierrors.PageDeleted()
+	}
+
+	// remove from database
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return wikierrors.InternalError(err)
+	}
+	defer tx.Commit()
+
+	_, err = tx.ExecContext(ctx, `
+		UPDATE pages
+		SET deleted_at=NOW()
+		WHERE uuid=$1;
+	`, pageInfo.UUID)
+	if err != nil {
+		tx.Rollback()
+		return wikierrors.DatabaseError(err)
+	}
+
+	return nil
+}
+
 func PostRevision(ctx context.Context, db *sql.DB, dataDir string, revReq utils.RevisionRequest) error {
 	var rev utils.Revision
 	var err error
