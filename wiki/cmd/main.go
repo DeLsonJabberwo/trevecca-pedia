@@ -192,7 +192,7 @@ func main() {
 
 	r.POST("/pages/:id/delete", func(c *gin.Context) {
 		var delReq utils.DeletePageRequest
-		err := c.Request.ParseMultipartForm(32 << 20)
+		err := c.Request.ParseForm()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": "bad request format",
