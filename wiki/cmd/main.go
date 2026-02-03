@@ -124,58 +124,6 @@ func main() {
 
 	// POST
 
-	r.POST("/pages/:id/revisions", func(c *gin.Context) {
-		var revReq utils.RevisionRequest
-		err := c.Request.ParseMultipartForm(32 << 20)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "bad request format",
-			})
-			return
-		}
-		file, err := c.FormFile("new_page")
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "bad request format",
-			})
-			return
-		}
-		f, err := file.Open()
-		if err != nil {
-			werr := wikierrors.FilesystemError(err)
-			c.AbortWithStatusJSON(werr.Code, gin.H{
-				"error": werr.Details,
-			})
-			return
-		}
-		defer f.Close()
-		newPageBytes, err := io.ReadAll(f)
-		if err != nil {
-			werr := wikierrors.InternalError(err)
-			c.AbortWithStatusJSON(werr.Code, gin.H{
-				"error": werr.Details,
-			})
-			return
-		}
-		revReq.PageId = c.PostForm("page_id")
-		revReq.Author = c.PostForm("author")
-		revReq.NewPage = string(newPageBytes)
-
-		err = requests.PostRevision(ctx, db, dataDir, revReq)
-		if err != nil {
-			werr, is := wikierrors.AsWikiError(err)
-			if !is {
-				werr = wikierrors.InternalError(err)
-			}
-			c.AbortWithStatusJSON(werr.Code, gin.H{
-				"error": werr.Details,
-			})
-			return
-		}
-
-		c.Status(http.StatusOK)
-	})
-
 	r.POST("/pages/new", func(c *gin.Context) {
 		var newPageReq utils.NewPageRequest
 		err := c.Request.ParseMultipartForm(32 << 20)
@@ -239,6 +187,87 @@ func main() {
 			})
 			return
 		}
+		c.Status(http.StatusOK)
+	})
+
+	r.POST("/pages/:id/delete", func(c *gin.Context) {
+		var delReq utils.DeletePageRequest
+		err := c.Request.ParseForm()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
+		}
+
+		delReq.Slug = c.PostForm("slug")
+		delReq.User = c.PostForm("user")
+
+		err = requests.DeletePage(ctx, db, dataDir, delReq)
+		if err != nil {
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
+		}
+
+		c.Status(http.StatusOK)
+
+	})
+
+	r.POST("/pages/:id/revisions", func(c *gin.Context) {
+		var revReq utils.RevisionRequest
+		err := c.Request.ParseMultipartForm(32 << 20)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
+		}
+		file, err := c.FormFile("new_page")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
+		}
+		f, err := file.Open()
+		if err != nil {
+			werr := wikierrors.FilesystemError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
+		}
+		defer f.Close()
+		newPageBytes, err := io.ReadAll(f)
+		if err != nil {
+			werr := wikierrors.InternalError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
+		}
+		revReq.PageId = c.PostForm("page_id")
+		revReq.Author = c.PostForm("author")
+		revReq.NewPage = string(newPageBytes)
+
+		err = requests.PostRevision(ctx, db, dataDir, revReq)
+		if err != nil {
+			werr, is := wikierrors.AsWikiError(err)
+			if !is {
+				werr = wikierrors.InternalError(err)
+			}
+			c.AbortWithStatusJSON(werr.Code, gin.H{
+				"error": werr.Details,
+			})
+			return
+		}
+
 		c.Status(http.StatusOK)
 	})
 

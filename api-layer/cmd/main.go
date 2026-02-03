@@ -17,6 +17,7 @@ func main() {
 	r.GET("/v1/wiki/pages/:id/revisions/:rev", wiki.GetPageRevision)
 
 	r.POST("/v1/wiki/pages/new", wiki.PostNewPage)
+	r.POST("/v1/wiki/pages/:id/delete", wiki.PostDeletePage)
 	r.POST("/v1/wiki/pages/:id/revisions", wiki.PostPageRevision)
 
 

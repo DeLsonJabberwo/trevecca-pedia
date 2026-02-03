@@ -93,6 +93,54 @@ func PostNewPage(c *gin.Context) {
 
 }
 
+func PostDeletePage(c *gin.Context) {
+	id := c.Param("id")
+	wikiURL := fmt.Sprintf("%s/pages/%s/delete", config.WikiServiceURL, id)
+
+	// get data from request
+	if err := c.Request.ParseForm(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+		return
+	}
+
+	// new request to wiki service
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	writer.WriteField("slug", c.PostForm("slug"))
+	writer.WriteField("user", c.PostForm("user"))
+
+	if err := writer.Close(); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to finalize multipart"})
+        return
+    }
+
+	req, err := http.NewRequest(http.MethodPost, wikiURL, &body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
+        return
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+
+	// get response from request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+        c.JSON(http.StatusBadGateway, gin.H{"error": "wiki service unreachable", "detail": err.Error()})
+        return
+    }
+	defer resp.Body.Close()
+
+	c.Status(resp.StatusCode)
+	for k, vals := range resp.Header {
+		for _, v := range vals {
+			c.Writer.Header().Add(k, v)
+		}
+	}
+	io.Copy(c.Writer, resp.Body)
+}
+
 func PostPageRevision(c *gin.Context) {
 	id := c.Param("id")
 	wikiURL := fmt.Sprintf("%s/pages/%s/revisions", config.WikiServiceURL, id)
