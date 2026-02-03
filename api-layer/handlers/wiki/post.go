@@ -99,7 +99,7 @@ func PostDeletePage(c *gin.Context) {
 
 	// get data from request
 	if err := c.Request.ParseForm(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse multipart form"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
 		return
 	}
 

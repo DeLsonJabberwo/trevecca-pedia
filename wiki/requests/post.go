@@ -32,7 +32,6 @@ func DeletePage(ctx context.Context, db *sql.DB, dataDir string, delReq utils.De
 	if err != nil {
 		return wikierrors.InternalError(err)
 	}
-	defer tx.Commit()
 
 	_, err = tx.ExecContext(ctx, `
 		UPDATE pages
@@ -44,6 +43,7 @@ func DeletePage(ctx context.Context, db *sql.DB, dataDir string, delReq utils.De
 		return wikierrors.DatabaseError(err)
 	}
 
+	tx.Commit()
 	return nil
 }
 
