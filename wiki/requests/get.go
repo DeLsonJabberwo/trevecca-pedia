@@ -70,21 +70,19 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	return page, nil
 }
 
-func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.PageInfo, error) {
-	var pages []database.PageInfo = make([]database.PageInfo, num)
-
-	var count int
-	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages").Scan(&count)
-	if count != 0 && err != nil {
+func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.PageInfo, error) {
+	var pagesCount int
+	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages WHERE deleted_at IS NULL").Scan(&pagesCount)
+	if pagesCount != 0 && err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	count -= ind
-	if count <= 0 {
-		return pages, nil
+	pagesCount -= ind
+	if pagesCount <= 0 {
+		return []database.PageInfo{}, nil
 	}
 
 	uuids, err := db.QueryContext(ctx,
-		"SELECT uuid FROM pages")
+		"SELECT uuid FROM pages WHERE deleted_at IS NULL")
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
@@ -92,10 +90,17 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 		uuids.Next()
 	}
 
+	var pages []database.PageInfo
+	if count <= pagesCount {
+		pages = make([]database.PageInfo, count)
+	} else {
+		pages = make([]database.PageInfo, pagesCount)
+	}
+
 	// i can almost guarantee this disgusting loop
 	// could be done better and be much less tragic
 	uuids.Next()
-	for i := 0; i < num && i < count; i++ {
+	for i := 0; i < len(pages); i++ {
 		var id uuid.UUID
 		uuids.Scan(&id)
 		pageInfo, err := database.GetPageInfo(ctx, db, id)
@@ -106,10 +111,6 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
-		if pageInfo.DeletedAt != nil {
-			i--
-			continue
-		}
 		pages[i] = *pageInfo
 	}
 
@@ -117,34 +118,39 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 }
 
 func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count int) ([]database.PageInfo, error) {
-	var pages []database.PageInfo = make([]database.PageInfo, count)
-
-	var rowCount int
+	var pagesCount int
 	err := db.QueryRowContext(
 		ctx,
 		`SELECT COUNT(*) FROM pages
 		JOIN page_categories ON pages.uuid = page_categories.page_id
-		WHERE page_categories.category=$1`,
-		cat).Scan(&rowCount)
-	if rowCount != 0 && err != nil {
+		WHERE page_categories.category=$1 AND pages.deleted_at IS NULL`,
+		cat).Scan(&pagesCount)
+	if pagesCount != 0 && err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	rowCount -= ind
-	if rowCount <= 0 {
-		return pages, nil
+	pagesCount -= ind
+	if pagesCount <= 0 {
+		return []database.PageInfo{}, nil
 	}
 
 	uuids, err := db.QueryContext(
 		ctx,
 		`SELECT uuid FROM pages
 		JOIN page_categories ON pages.uuid = page_categories.page_id
-		WHERE page_categories.category=$1`,
+		WHERE page_categories.category=$1 AND pages.deleted_at IS NULL`,
 		cat)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
 	for range ind {
 		uuids.Next()
+	}
+
+	var pages []database.PageInfo
+	if count <= pagesCount {
+		pages = make([]database.PageInfo, count)
+	} else {
+		pages = make([]database.PageInfo, pagesCount)
 	}
 
 	for i := range pages {
