@@ -314,6 +314,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		uuids.Next()
 	}
 
+	fmt.Printf("rowCount: %d\n", rowCount)
 	var revs []database.RevInfo
 	if count <= rowCount {
 		revs = make([]database.RevInfo, count)
