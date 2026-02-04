@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"wiki/database"
 	wikierrors "wiki/errors"
 	"wiki/filesystem"
@@ -260,7 +261,6 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 }
 
 func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count int) ([]database.RevInfo, error) {
-	var revs []database.RevInfo = make([]database.RevInfo, count)
 
 	var pageUUID uuid.UUID
 	if err := uuid.Validate(pageId); err == nil {
@@ -274,6 +274,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 			return nil, wikierrors.PageNotFound()
 		}
 		if err != nil {
+			fmt.Printf("error: GetPageUUID\n")
 			return nil, wikierrors.DatabaseError(err)
 		}
 	}
@@ -299,7 +300,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 	}
 	rowCount -= ind
 	if rowCount <= 0 {
-		return revs, nil
+		return []database.RevInfo{}, nil
 	}
 
 	uuids, err := db.QueryContext(
@@ -313,6 +314,13 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		uuids.Next()
 	}
 
+	var revs []database.RevInfo
+	if count <= rowCount {
+		revs = make([]database.RevInfo, count)
+	} else {
+		revs = make([]database.RevInfo, rowCount)
+	}
+
 	for i := range revs {
 		uuids.Next()
 		if uuids == nil {
@@ -321,6 +329,9 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		var id uuid.UUID
 		uuids.Scan(&id)
 		revInfo, err := database.GetRevisionInfo(ctx, db, id)
+		if err == sql.ErrNoRows {
+			continue
+		}
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
