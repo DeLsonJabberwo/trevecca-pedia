@@ -16,13 +16,13 @@ func GetPages(c *gin.Context) {
 	if err != nil {
 		ind = 0
 	}
-	num, err := strconv.Atoi(c.DefaultQuery("num", "10"))
+	count, err := strconv.Atoi(c.DefaultQuery("count", "10"))
 	if err != nil {
-		num = 10
+		count = 10
 	}
 
-	res, err := http.Get(fmt.Sprintf("%s/pages?category=%s&index=%d&num=%d",
-							config.WikiServiceURL, catQuery, ind, num))
+	res, err := http.Get(fmt.Sprintf("%s/pages?category=%s&index=%d&count=%d",
+							config.WikiServiceURL, catQuery, ind, count))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
 		return
@@ -61,13 +61,13 @@ func GetPageRevisions(c *gin.Context) {
 	if err != nil {
 		ind = 0
 	}
-	num, err := strconv.Atoi(c.DefaultQuery("num", "10"))
+	count, err := strconv.Atoi(c.DefaultQuery("count", "10"))
 	if err != nil {
-		num = 10
+		count = 10
 	}
 
-	res, err := http.Get(fmt.Sprintf("%s/pages/%s/revisions?index=%d&num=%d",
-							config.WikiServiceURL, id, ind, num))
+	res, err := http.Get(fmt.Sprintf("%s/pages/%s/revisions?index=%d&count=%d",
+							config.WikiServiceURL, id, ind, count))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
 		return
