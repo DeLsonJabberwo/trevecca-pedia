@@ -12,7 +12,6 @@ type PageInfo struct {
 	Name			string		`db:"name"`
 	LastRevisionId	*uuid.UUID	`db:"last_revision_id"`
 	ArchiveDate		*time.Time	`db:"archive_date"`
-	DeletedAt		*time.Time	`db:"deleted_at"`
 }
 
 type NameUUID struct {
