@@ -36,6 +36,10 @@ func GetPage(c *gin.Context) {
 
 	entryContent := wikipages.WikiEntryContent(page)
 	component := components.Page(page.Name, entryContent)
-    component.Render(context.Background(), c.Writer)
+	component.Render(context.Background(), c.Writer)
+
+}
+
+func GetHome(c *gin.Context) {
 
 }

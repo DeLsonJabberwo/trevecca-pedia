@@ -1,2 +1,20 @@
-@import url('https://cdn.tailwindcss.com/?plugins=typography');
-@import "tailwindcss"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind typography;
+
+/* Custom headings */
+@config "tailwind.config.js";
+@layer base {
+  h1 {
+    @apply text-h1 font-bold bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, theme('colors.indigo.500'), theme('colors.purple.600'));
+    -webkit-background-clip: text; /* for Safari */
+  }
+
+  h2 {
+    @apply text-h2 font-semibold bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, theme('colors.indigo.500'), theme('colors.purple.600'));
+    -webkit-background-clip: text;
+  }
+}
