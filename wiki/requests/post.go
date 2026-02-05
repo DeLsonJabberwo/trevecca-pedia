@@ -23,7 +23,11 @@ func DeletePage(ctx context.Context, db *sql.DB, dataDir string, delReq utils.De
 		return wikierrors.DatabaseError(err)
 	}
 
-	if pageInfo.DeletedAt != nil {
+	pageDeleted, err := database.GetPageDeleted(ctx, db, pageInfo.UUID) 
+	if err != nil {
+		return wikierrors.DatabaseError(err)
+	}
+	if pageDeleted {
 		return wikierrors.PageDeleted()
 	}
 

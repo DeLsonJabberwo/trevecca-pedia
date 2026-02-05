@@ -43,7 +43,11 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 		return utils.Page{}, wikierrors.DatabaseError(err)
 	}
 
-	if info.DeletedAt != nil {
+	pageDeleted, err := database.GetPageDeleted(ctx, db, info.UUID)
+	if err != nil {
+		return utils.Page{}, wikierrors.DatabaseError(err)
+	}
+	if pageDeleted {
 		return utils.Page{}, wikierrors.PageDeleted()
 	}
 
@@ -65,7 +69,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	}
 
 	page = utils.Page{UUID: info.UUID, Slug: info.Slug, Name: info.Name, ArchiveDate: info.ArchiveDate,
-		DeletedAt: info.DeletedAt, LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime,
+		LastEdit: lastRev.UUID, LastEditTime: lastRev.DateTime,
 		Content: content}
 
 	return page, nil
@@ -74,7 +78,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.PageInfo, error) {
 	var pagesCount int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages WHERE deleted_at IS NULL").Scan(&pagesCount)
-	if pagesCount != 0 && err != nil {
+	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
 	pagesCount -= ind
@@ -83,36 +87,28 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.P
 	}
 
 	uuids, err := db.QueryContext(ctx,
-		"SELECT uuid FROM pages WHERE deleted_at IS NULL")
+		"SELECT uuid FROM pages WHERE deleted_at IS NULL ORDER BY slug LIMIT $1 OFFSET $2",
+		count, ind)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	for range ind {
-		uuids.Next()
-	}
+	defer uuids.Close()
 
 	var pages []database.PageInfo
-	if count <= pagesCount {
-		pages = make([]database.PageInfo, count)
-	} else {
-		pages = make([]database.PageInfo, pagesCount)
-	}
 
 	// i can almost guarantee this disgusting loop
 	// could be done better and be much less tragic
-	uuids.Next()
-	for i := 0; i < len(pages); i++ {
+	for uuids.Next() {
 		var id uuid.UUID
 		uuids.Scan(&id)
 		pageInfo, err := database.GetPageInfo(ctx, db, id)
-		uuids.Next()
-		if pageInfo == nil {
-			continue
-		}
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
-		pages[i] = *pageInfo
+		if pageInfo == nil {
+			continue
+		}
+		pages = append(pages, *pageInfo)
 	}
 
 	return pages, nil
@@ -201,7 +197,11 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	if err != nil {
 		return utils.Revision{}, wikierrors.DatabaseError(err)
 	}
-	if pageInfo.DeletedAt != nil {
+	pageDeleted, err := database.GetPageDeleted(ctx, db, pageInfo.UUID)
+	if err != nil {
+		return utils.Revision{}, wikierrors.DatabaseError(err)
+	}
+	if pageDeleted {
 		return utils.Revision{}, wikierrors.PageDeleted()
 	}
 	rev.PageId = *revInfo.PageId
@@ -209,7 +209,7 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	rev.RevDateTime = *revInfo.DateTime
 
 	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
-	if err == sql.ErrNoRows{
+	if err == sql.ErrNoRows {
 		return utils.Revision{}, wikierrors.SnapshotNotFound()
 	}
 	if err != nil {
@@ -279,14 +279,11 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		}
 	}
 
-	pageInfo, err := database.GetPageInfo(ctx, db, pageUUID)
-	if err == sql.ErrNoRows {
-		return nil, wikierrors.PageNotFound()
-	}
+	pageDeleted, err := database.GetPageDeleted(ctx, db, pageUUID)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	if pageInfo.DeletedAt != nil {
+	if pageDeleted {
 		return nil, wikierrors.PageDeleted()
 	}
 
@@ -314,7 +311,6 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		uuids.Next()
 	}
 
-	fmt.Printf("rowCount: %d\n", rowCount)
 	var revs []database.RevInfo
 	if count <= rowCount {
 		revs = make([]database.RevInfo, count)

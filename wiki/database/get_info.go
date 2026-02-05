@@ -25,8 +25,8 @@ func GetPageInfo(ctx context.Context, db *sql.DB, uuid uuid.UUID) (*PageInfo, er
 	var p PageInfo
 	err := db.QueryRowContext(
 			ctx,
-			"SELECT * FROM pages WHERE uuid=$1", uuid.String()).
-			Scan(&p.UUID, &p.Slug, &p.Name, &p.LastRevisionId, &p.ArchiveDate, &p.DeletedAt)
+			"SELECT uuid, slug, name, last_revision_id, archive_date FROM pages WHERE uuid=$1", uuid.String()).
+			Scan(&p.UUID, &p.Slug, &p.Name, &p.LastRevisionId, &p.ArchiveDate)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +53,20 @@ func GetPageNameUUIDs(ctx context.Context, db *sql.DB) ([]NameUUID, error) {
 		r = append(r, row)
 	}
 	return r, nil
+}
+
+func GetPageDeleted(ctx context.Context, db *sql.DB, pageUUID uuid.UUID) (bool, error) {
+	var pageDeleted *time.Time
+	err := db.QueryRowContext(ctx, `
+		SELECT deleted_at FROM pages WHERE uuid=$1;
+	`, pageUUID).Scan(&pageDeleted)
+	if err != nil {
+		return false, err
+	}
+	if pageDeleted != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 func GetPageRevisionsInfo(ctx context.Context, db *sql.DB, pageId uuid.UUID) ([]RevInfo, error) {
