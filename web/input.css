@@ -1,20 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@tailwind typography;
+@import "tailwindcss";
+@config "./tailwind.config.js";
 
-/* Custom headings */
-@config "tailwind.config.js";
+@source "./templates/**/*.{templ,html}";
+
 @layer base {
   h1 {
-    @apply text-h1 font-bold bg-clip-text text-transparent;
-    background-image: linear-gradient(to right, theme('colors.indigo.500'), theme('colors.purple.600'));
-    -webkit-background-clip: text; /* for Safari */
+    font-size: 5em;
   }
-
-  h2 {
-    @apply text-h2 font-semibold bg-clip-text text-transparent;
-    background-image: linear-gradient(to right, theme('colors.indigo.500'), theme('colors.purple.600'));
-    -webkit-background-clip: text;
+  p {
+    /*background-color: blue;*/
   }
 }
