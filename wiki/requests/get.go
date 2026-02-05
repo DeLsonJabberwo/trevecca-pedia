@@ -134,35 +134,27 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count i
 		ctx,
 		`SELECT uuid FROM pages
 		JOIN page_categories ON pages.uuid = page_categories.page_id
-		WHERE page_categories.category=$1 AND pages.deleted_at IS NULL`,
-		cat)
+		WHERE page_categories.category=$1 AND pages.deleted_at IS NULL
+		LIMIT $2 OFFSET $3`,
+		cat, count, ind)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	for range ind {
-		uuids.Next()
-	}
+	uuids.Close()
 
 	var pages []database.PageInfo
-	if count <= pagesCount {
-		pages = make([]database.PageInfo, count)
-	} else {
-		pages = make([]database.PageInfo, pagesCount)
-	}
 
-	for i := range pages {
-		uuids.Next()
-		if uuids == nil {
-			break
-		}
+	for uuids.Next() {
 		var id uuid.UUID
 		uuids.Scan(&id)
 		pageInfo, err := database.GetPageInfo(ctx, db, id)
 		if err != nil {
-			i--
+			return nil, wikierrors.DatabaseError(err)
+		}
+		if pageInfo == nil {
 			continue
 		}
-		pages[i] = *pageInfo
+		pages = append(pages, *pageInfo)
 	}
 
 	return pages, nil
@@ -287,52 +279,41 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 		return nil, wikierrors.PageDeleted()
 	}
 
-	var rowCount int
+	var revCount int
 	err = db.QueryRowContext(
 		ctx,
 		"SELECT COUNT(*) FROM revisions WHERE page_id=$1",
-		pageUUID).Scan(&rowCount)
-	if rowCount != 0 && err != nil {
+		pageUUID).Scan(&revCount)
+	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	rowCount -= ind
-	if rowCount <= 0 {
+	revCount -= ind
+	if revCount <= 0 {
 		return []database.RevInfo{}, nil
 	}
 
 	uuids, err := db.QueryContext(
 		ctx,
-		"SELECT uuid FROM revisions WHERE page_id=$1",
-		pageUUID)
+		"SELECT uuid FROM revisions WHERE page_id=$1 LIMIT $2 OFFSET $3",
+		pageUUID, count, ind)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	for range ind {
-		uuids.Next()
-	}
+	defer uuids.Close()
 
 	var revs []database.RevInfo
-	if count <= rowCount {
-		revs = make([]database.RevInfo, count)
-	} else {
-		revs = make([]database.RevInfo, rowCount)
-	}
 
-	for i := range revs {
-		uuids.Next()
-		if uuids == nil {
-			break
-		}
+	for uuids.Next() {
 		var id uuid.UUID
 		uuids.Scan(&id)
 		revInfo, err := database.GetRevisionInfo(ctx, db, id)
-		if err == sql.ErrNoRows {
-			continue
-		}
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
-		revs[i] = *revInfo
+		if revInfo == nil {
+			continue
+		}
+		revs = append(revs, *revInfo)
 	}
 
 	return revs, nil
