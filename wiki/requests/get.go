@@ -116,21 +116,21 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, num int) ([]database.Pag
 	return pages, nil
 }
 
-func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, num int) ([]database.PageInfo, error) {
-	var pages []database.PageInfo = make([]database.PageInfo, num)
+func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count int) ([]database.PageInfo, error) {
+	var pages []database.PageInfo = make([]database.PageInfo, count)
 
-	var count int
+	var rowCount int
 	err := db.QueryRowContext(
 		ctx,
 		`SELECT COUNT(*) FROM pages
 		JOIN page_categories ON pages.uuid = page_categories.page_id
 		WHERE page_categories.category=$1`,
-		cat).Scan(&count)
-	if count != 0 && err != nil {
+		cat).Scan(&rowCount)
+	if rowCount != 0 && err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	count -= ind
-	if count <= 0 {
+	rowCount -= ind
+	if rowCount <= 0 {
 		return pages, nil
 	}
 
@@ -253,8 +253,8 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	return rev, nil
 }
 
-func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num int) ([]database.RevInfo, error) {
-	var revs []database.RevInfo = make([]database.RevInfo, num)
+func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count int) ([]database.RevInfo, error) {
+	var revs []database.RevInfo = make([]database.RevInfo, count)
 
 	var pageUUID uuid.UUID
 	if err := uuid.Validate(pageId); err == nil {
@@ -283,16 +283,16 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, num i
 		return nil, wikierrors.PageDeleted()
 	}
 
-	var count int
+	var rowCount int
 	err = db.QueryRowContext(
 		ctx,
 		"SELECT COUNT(*) FROM revisions WHERE page_id=$1",
-		pageUUID).Scan(&count)
-	if count != 0 && err != nil {
+		pageUUID).Scan(&rowCount)
+	if rowCount != 0 && err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	count -= ind
-	if count <= 0 {
+	rowCount -= ind
+	if rowCount <= 0 {
 		return revs, nil
 	}
 
