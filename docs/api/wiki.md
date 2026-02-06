@@ -21,7 +21,7 @@ So, calls to the `wiki` service begin with: `/v1/wiki`
 
 #### Arguments
 `ind`: the index to be the first item  
-`count`: the countber of entries to retrieve  
+`count`: the count of entries to retrieve  
 `:id`: the slug (or uuid) of the page  
 `:rev`: the uuid of the page revision  
 `{}`: content in curly braces is optional  
