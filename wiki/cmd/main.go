@@ -1,12 +1,21 @@
 package main
 
 import (
+	"os"
 	"wiki/handlers"
+	"wiki/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// utils import triggers .env loading via init()
+	// Ensure database is accessible
+	_, err := utils.GetDatabase()
+	if err != nil {
+		panic(err)
+	}
+
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 	gin.SetMode(gin.DebugMode)
@@ -22,7 +31,6 @@ func main() {
 
 	r.GET("/pages/:id/revisions/:rev", handlers.PageRevisionHandler)
 
-
 	// POST
 
 	r.POST("/pages/new", handlers.NewPageHandler)
@@ -31,6 +39,10 @@ func main() {
 
 	r.POST("/pages/:id/revisions", handlers.NewRevisionHandler)
 
-	r.Run(":9454")
+	// Use port from environment variable, default to 9454
+	port := os.Getenv("WIKI_SERVICE_PORT")
+	if port == "" {
+		port = "9454"
+	}
+	r.Run(":" + port)
 }
-
