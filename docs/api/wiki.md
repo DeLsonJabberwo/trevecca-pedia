@@ -14,14 +14,14 @@ So, calls to the `wiki` service begin with: `/v1/wiki`
 
 | Type      | Route                                     | Arguments             | Description       |
 | ---       | ---                                       | ---                   | ---               |
-| `GET`     | `/pages{?ind=x&num=y}`                    | `ind`, `num`          | Returns a list of page info and content.  |
+| `GET`     | `/pages{?ind=x&count=y}`                  | `ind`, `count`        | Returns a list of page info and content.  |
 | `GET`     | `/pages/:id`                              | `:id`                 | Returns the info and content for the specified page. |
-| `GET`     | `/pages/:id/revisions{?ind=x&num=y}`      | `:id`, `ind`, `num`   | Returns a list of the revisions for the specified page. |
+| `GET`     | `/pages/:id/revisions{?ind=x&count=y}`    | `:id`, `ind`, `count` | Returns a list of the revisions for the specified page. |
 | `GET`     | `/pages/:id/revisions/:rev`               | `:id`, `:rev`         | Returns the info and content for the specified revision of the specified page. |
 
 #### Arguments
 `ind`: the index to be the first item  
-`num`: the number of entries to retrieve  
+`count`: the count of entries to retrieve  
 `:id`: the slug (or uuid) of the page  
 `:rev`: the uuid of the page revision  
 `{}`: content in curly braces is optional  
