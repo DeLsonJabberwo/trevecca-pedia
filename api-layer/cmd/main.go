@@ -1,7 +1,9 @@
 package main
 
 import (
+	"api-layer/config"
 	"api-layer/handlers/wiki"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +22,6 @@ func main() {
 	r.POST("/v1/wiki/pages/:id/delete", wiki.PostDeletePage)
 	r.POST("/v1/wiki/pages/:id/revisions", wiki.PostPageRevision)
 
-
-	r.Run(":2745")
+	port := config.GetEnv("API_LAYER_PORT", "2745")
+	r.Run(fmt.Sprintf(":%s", port))
 }
