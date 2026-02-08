@@ -42,7 +42,7 @@ func Page(title string, children ...templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | TreveccaPedia</title><link rel=\"stylesheet\" href=\"/static/css/tailwind.css\"></head><body class=\"bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-300 min-h-screen flex flex-col\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | TreveccaPedia</title><link rel=\"stylesheet\" href=\"/static/css/tailwind.css\"></head><body class=\"bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 min-h-screen flex flex-col\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,7 @@ func Page(title string, children ...templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-50 transition-colors duration-300\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 shadow-sm sticky top-0 z-50 transition-colors duration-300\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
