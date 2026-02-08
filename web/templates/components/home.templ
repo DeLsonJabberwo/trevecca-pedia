@@ -1,0 +1,16 @@
+package components
+
+import "web/utils"
+
+templ HomeContent(pages []utils.Page) {
+    <div class="flex flex-col justify-center items-center gap-3">
+        @PageList(pages...)
+    </div>
+    
+}
+
+templ PageList(pages ...utils.Page) {
+    for _, page := range pages {
+        <a href={ "./pages/" + page.Slug }><h3>{ page.Name }</h3></a>
+    }
+}
