@@ -3,7 +3,6 @@ package filesystem
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -67,8 +66,9 @@ func GetPagePreview(ctx context.Context, db *sql.DB, dataDir string, pageId uuid
 	content = strings.ReplaceAll(content, "\r", " ")
 
 	// Get first length characters
-	if len(content) > length {
-		content = content[:length]
+	runes := []rune(content)
+	if len(runes) > length {
+		content = string(runes[:length])
 	}
 
 	return strings.TrimSpace(content), nil
