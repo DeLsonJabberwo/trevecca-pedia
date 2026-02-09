@@ -9,17 +9,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func GetPageUUID(ctx context.Context, db *sql.DB, slug string) (uuid.UUID, error) {
-	var pageId uuid.UUID
-	err := db.QueryRowContext(
-			ctx,
-			"SELECT uuid FROM pages WHERE slug=$1", slug).
-			Scan(&pageId)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return pageId, nil
-}
 
 func GetPageInfo(ctx context.Context, db *sql.DB, uuid uuid.UUID) (*PageInfo, error) {
 	var p PageInfo
@@ -32,27 +21,6 @@ func GetPageInfo(ctx context.Context, db *sql.DB, uuid uuid.UUID) (*PageInfo, er
 	}
 
 	return &p, nil
-}
-
-func GetPageNameUUIDs(ctx context.Context, db *sql.DB) ([]NameUUID, error) {
-	var r []NameUUID
-	rows, err := db.QueryContext(
-				ctx,
-				"SELECT name, uuid FROM pages")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var row NameUUID
-		err := rows.Scan(&row.Name, &row.UUID)
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, row)
-	}
-	return r, nil
 }
 
 func GetPageDeleted(ctx context.Context, db *sql.DB, pageUUID uuid.UUID) (bool, error) {

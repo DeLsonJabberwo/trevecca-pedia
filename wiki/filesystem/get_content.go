@@ -3,7 +3,10 @@ package filesystem
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -45,4 +48,28 @@ func GetSnapshotContent(ctx context.Context, db *sql.DB, dataDir string, snapId 
 		return "", err
 	}
 	return string(content), nil
+}
+
+func GetPagePreview(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID, length int) (string, error) {
+	content, err := GetPageContent(ctx, db, dataDir, pageId)
+	if err != nil {
+		return "", err
+	}
+
+	// Remove horizontal bars (---, ***, etc.)
+	content = regexp.MustCompile(`(?m)^[-*]{3,}\s*$`).ReplaceAllString(content, "")
+
+	// Convert headings (# Heading) to bold (**Heading**)
+	content = regexp.MustCompile(`(?m)^#{1,6}\s+(.+)$`).ReplaceAllString(content, "**$1**")
+
+	// Remove newlines
+	content = strings.ReplaceAll(content, "\n", " ")
+	content = strings.ReplaceAll(content, "\r", " ")
+
+	// Get first length characters
+	if len(content) > length {
+		content = content[:length]
+	}
+
+	return strings.TrimSpace(content), nil
 }

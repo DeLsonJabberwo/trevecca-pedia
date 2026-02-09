@@ -1,17 +1,14 @@
 package requests
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"wiki/database"
 	wikierrors "wiki/errors"
 	"wiki/filesystem"
 	"wiki/utils"
 
-	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/google/uuid"
 )
 
@@ -23,19 +20,12 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	var pageId uuid.UUID
 	var err error
 
-	if err = uuid.Validate(id); err == nil {
-		pageId, err = uuid.Parse(id)
-		if err != nil {
-			return utils.Page{}, wikierrors.InvalidID(err)
-		}
-	} else {
-		pageId, err = database.GetPageUUID(ctx, db, id)
-		if err == sql.ErrNoRows {
-			return utils.Page{}, wikierrors.PageNotFound()
-		}
-		if err != nil {
-			return utils.Page{}, wikierrors.DatabaseError(err)
-		}
+	pageId, err = database.GetUUID(ctx, db, id)
+	if err == sql.ErrNoRows {
+		return utils.Page{}, wikierrors.PageNotFound()
+	}
+	if err != nil {
+		return utils.Page{}, wikierrors.DatabaseError(err)
 	}
 
 	info, err = database.GetPageInfo(ctx, db, pageId)
@@ -75,7 +65,7 @@ func GetPage(ctx context.Context, db *sql.DB, dataDir string, id string) (utils.
 	return page, nil
 }
 
-func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.PageInfo, error) {
+func GetPages(ctx context.Context, db *sql.DB, dataDir string, ind int, count int) ([]utils.PageInfoPrev, error) {
 	var pagesCount int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM pages WHERE deleted_at IS NULL").Scan(&pagesCount)
 	if err != nil {
@@ -83,7 +73,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.P
 	}
 	pagesCount -= ind
 	if pagesCount <= 0 {
-		return []database.PageInfo{}, nil
+		return []utils.PageInfoPrev{}, nil
 	}
 
 	uuids, err := db.QueryContext(ctx,
@@ -94,16 +84,16 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.P
 	}
 	defer uuids.Close()
 
-	var pages []database.PageInfo
+	var pages []utils.PageInfoPrev
 
 	// i can almost guarantee this disgusting loop
 	// could be done better and be much less tragic
 	for uuids.Next() {
 		var id uuid.UUID
 		uuids.Scan(&id)
-		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		pageInfo, err := utils.GetPageInfoPreview(ctx, db, dataDir, id)
 		if err != nil {
-			return nil, wikierrors.DatabaseError(err)
+			return nil, wikierrors.DatabaseFilesystemError(err)
 		}
 		if pageInfo == nil {
 			continue
@@ -114,7 +104,7 @@ func GetPages(ctx context.Context, db *sql.DB, ind int, count int) ([]database.P
 	return pages, nil
 }
 
-func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count int) ([]database.PageInfo, error) {
+func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string, cat int, ind int, count int) ([]utils.PageInfoPrev, error) {
 	var pagesCount int
 	err := db.QueryRowContext(
 		ctx,
@@ -127,7 +117,7 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count i
 	}
 	pagesCount -= ind
 	if pagesCount <= 0 {
-		return []database.PageInfo{}, nil
+		return []utils.PageInfoPrev{}, nil
 	}
 
 	uuids, err := db.QueryContext(
@@ -142,12 +132,12 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, cat int, ind int, count i
 	}
 	uuids.Close()
 
-	var pages []database.PageInfo
+	var pages []utils.PageInfoPrev
 
 	for uuids.Next() {
 		var id uuid.UUID
 		uuids.Scan(&id)
-		pageInfo, err := database.GetPageInfo(ctx, db, id)
+		pageInfo, err := utils.GetPageInfoPreview(ctx, db, dataDir, id)
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
@@ -200,53 +190,10 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	rev.Name = pageInfo.Name
 	rev.RevDateTime = *revInfo.DateTime
 
-	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, rev.UUID)
-	if err == sql.ErrNoRows {
-		return utils.Revision{}, wikierrors.SnapshotNotFound()
-	}
+	rev.Content, err = utils.GetContentAtRevision(ctx, db, dataDir, rev.PageId, rev.UUID)
 	if err != nil {
-		return utils.Revision{}, wikierrors.DatabaseError(err)
-	}
-	if lastSnap == nil {
-		return utils.Revision{}, wikierrors.SnapshotNotFound()
-	}
-	missingRevs, err := database.GetMissingRevisions(ctx, db, rev.UUID)
-	if err != nil {
-		return utils.Revision{}, wikierrors.DatabaseError(err)
-	}
-	rev.Content, err = filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
-	if err != nil {
-		return utils.Revision{}, wikierrors.FilesystemError(err)
-	}
-
-	// i hope and pray that this works
-	// update: it worked. most errors were elsewhere :)
-	for _, r := range missingRevs {
-		if r.UUID == nil {
-			continue
-		}
-		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
-		if err != nil {
-			return utils.Revision{}, wikierrors.FilesystemError(err)
-		}
-		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
-		if err != nil {
-			return utils.Revision{}, wikierrors.InternalError(err)
-		}
-		if len(files) == 0 {
-			continue
-		}
-		src := bytes.NewReader([]byte(rev.Content))
-		var dst bytes.Buffer
-
-		err = gitdiff.Apply(&dst, src, files[0])
-		if err != nil {
-			if errors.Is(err, &gitdiff.Conflict{}) {
-				return utils.Revision{}, wikierrors.RevisionConflict(err)
-			}
-			return utils.Revision{}, wikierrors.InternalError(err)
-		}
-		rev.Content = dst.String()
+		// GetContentAtRevision returns wikierror
+		return utils.Revision{}, err
 	}
 
 	return rev, nil
@@ -254,21 +201,13 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 
 func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count int) ([]database.RevInfo, error) {
 
-	var pageUUID uuid.UUID
-	if err := uuid.Validate(pageId); err == nil {
-		pageUUID, err = uuid.Parse(pageId)
-		if err != nil {
-			return nil, wikierrors.InvalidID(err)
-		}
-	} else {
-		pageUUID, err = database.GetPageUUID(ctx, db, pageId)
-		if err == sql.ErrNoRows {
-			return nil, wikierrors.PageNotFound()
-		}
-		if err != nil {
-			fmt.Printf("error: GetPageUUID\n")
-			return nil, wikierrors.DatabaseError(err)
-		}
+	pageUUID, err := database.GetUUID(ctx, db, pageId)
+	if err == sql.ErrNoRows {
+		return nil, wikierrors.PageNotFound()
+	}
+	if err != nil {
+		fmt.Printf("error: GetPageUUID\n")
+		return nil, wikierrors.DatabaseError(err)
 	}
 
 	pageDeleted, err := database.GetPageDeleted(ctx, db, pageUUID)
