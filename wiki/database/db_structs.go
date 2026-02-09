@@ -14,11 +14,6 @@ type PageInfo struct {
 	ArchiveDate		*time.Time	`db:"archive_date"`
 }
 
-type NameUUID struct {
-	Name	string		`db:"name"`
-	UUID	uuid.UUID	`db:"uuid"`
-}
-
 type RevInfo struct {
 	UUID		*uuid.UUID	`db:"uuid"`
 	PageId		*uuid.UUID	`db:"page_id"`

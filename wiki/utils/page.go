@@ -17,6 +17,15 @@ type Page struct {
 	Content			string		`json:"content"`
 }
 
+type PageInfoPrev struct {
+	UUID			uuid.UUID	`json:"uuid"`
+	Slug			string		`json:"slug"`
+	Name			string		`json:"name"`
+	LastRevisionId	*uuid.UUID	`json:"last_revision_id"`
+	ArchiveDate		*time.Time	`json:"archive_date"`
+	Preview			string		`json:"preview"`
+}
+
 type NewPageRequest struct {
 	Slug			string		`json:"slug"`
 	Name			string		`json:"name"`

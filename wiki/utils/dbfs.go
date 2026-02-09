@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"wiki/database"
+	wikierrors "wiki/errors"
 	"wiki/filesystem"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
@@ -92,16 +93,19 @@ func CreateSnapshot(ctx context.Context, db *sql.DB, dataDir string, pageId uuid
 
 func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID, revId uuid.UUID) (string, error) {
 	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, revId)
+	if err == sql.ErrNoRows {
+		return "", wikierrors.RevisionNotFound()
+	}
 	if err != nil {
-		return "", err
+		return "", wikierrors.DatabaseError(err)
 	}
 	missingRevs, err := database.GetMissingRevisions(ctx, db, revId)
 	if err != nil {
-		return "", err
+		return "", wikierrors.DatabaseError(err)
 	}
 	revContent, err := filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
 	if err != nil {
-		return "", err
+		return "", wikierrors.FilesystemError(err)
 	}
 
 	// i hope and pray that this works
@@ -109,7 +113,7 @@ func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageI
 	for _, r := range missingRevs {
 		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
 		if err != nil {
-			return "", err
+			return "", wikierrors.FilesystemError(err)
 		}
 		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
 		if err != nil {
@@ -131,4 +135,23 @@ func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageI
 		revContent = dst.String()
 	}
 	return revContent, nil
+}
+
+func GetPageInfoPreview(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID) (*PageInfoPrev, error) {
+	pageInfo, err := database.GetPageInfo(ctx, db, pageId)
+	if err != nil {
+		return nil, err
+	}
+	preview, err := filesystem.GetPagePreview(ctx, db, dataDir, pageId, 250)
+	if err != nil {
+		return nil, err
+	}
+	return &PageInfoPrev{
+		UUID: pageInfo.UUID,
+		Slug: pageInfo.Slug,
+		Name: pageInfo.Name,
+		LastRevisionId: pageInfo.LastRevisionId,
+		ArchiveDate: pageInfo.ArchiveDate,
+		Preview: preview,
+	}, nil
 }

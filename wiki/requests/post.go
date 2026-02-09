@@ -14,7 +14,7 @@ import (
 )
 
 func DeletePage(ctx context.Context, db *sql.DB, dataDir string, delReq utils.DeletePageRequest) error {
-	pageUUID, err := database.GetPageUUID(ctx, db, delReq.Slug)
+	pageUUID, err := database.GetUUID(ctx, db, delReq.Slug)
 	if err != nil {
 		return wikierrors.DatabaseError(err)
 	}

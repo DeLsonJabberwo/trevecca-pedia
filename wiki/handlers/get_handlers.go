@@ -26,6 +26,7 @@ func PagesHandler(c *gin.Context) {
 		return
 	}
 	defer db.Close()
+	dataDir := utils.GetDataDir()
 
 	catQuery := c.DefaultQuery("category", "")
 	cat := database.ValidateCategory(ctx, db, catQuery)
@@ -37,9 +38,9 @@ func PagesHandler(c *gin.Context) {
 	if err != nil {
 		count = 10
 	}
-	var pages []database.PageInfo
+	var pages []utils.PageInfoPrev
 	if cat == 0 {
-		pages, err = requests.GetPages(ctx, db, ind, count)
+		pages, err = requests.GetPages(ctx, db, dataDir, ind, count)
 		if err != nil {
 			werr, is := wikierrors.AsWikiError(err)
 			if !is {
@@ -51,7 +52,7 @@ func PagesHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		pages, err = requests.GetPagesCategory(ctx, db, cat, ind, count)
+		pages, err = requests.GetPagesCategory(ctx, db, dataDir, cat, ind, count)
 		if err != nil {
 			werr, is := wikierrors.AsWikiError(err)
 			if !is {
