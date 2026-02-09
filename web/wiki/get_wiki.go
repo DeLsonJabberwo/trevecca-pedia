@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 	"web/config"
 	"web/templates/components"
 	wikipages "web/templates/wiki-pages"
 	"web/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetPage(c *gin.Context) {
@@ -45,6 +47,9 @@ func GetHome(c *gin.Context) {
 	pages, err := getPages()
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Couldn't fetch page info: %w\n", err))
+	}
+	if len(pages) == 0 {
+		pages = append(pages, utils.PageInfoPrev{UUID: uuid.UUID{}, Slug: "", Name: "Not Found", ArchiveDate: nil, LastEditUUID: nil, LastEditTime: time.Now(), Preview: "No pages found"})
 	}
 	homeComp := components.HomeContent(pages)
 	page := components.Page("TreveccaPedia", homeComp)

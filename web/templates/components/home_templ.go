@@ -31,7 +31,7 @@ func HomeContent(pages []utils.PageInfoPrev) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col justify-center items-center border-r border-l border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 pt-6 pb-6 sm:w-full md:w-2/3 lg:w-1/2 mx-auto\"><h2 class=\"text-left text-2xl mb-3 font-bold\">Pages</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col md:flex-row\"><div class=\"flex flex-col justify-center items-center border-r border-l border-b border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 py-6 px-0 md:mx-0 sm:w-full md:w-2/3 lg:w-1/2 sm:mx-auto md:ml-10 lg:ml-20 mr-0\"><h2 class=\"text-left text-2xl mb-3 font-bold\">Pages</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -39,7 +39,7 @@ func HomeContent(pages []utils.PageInfoPrev) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"flex flex-col items-center border-r border-b border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 py-6 px-0 md:mx-0 sm:w-full md:w-1/4 lg:w-1/3 sm:mx-auto ml-0 h-100\"><h3 class=\"text-left mb-3 font-bold\">Categories</h3></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -69,46 +69,46 @@ func PageList(pages ...utils.PageInfoPrev) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, page := range pages {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"hover:bg-neutral-300 dark:hover:bg-neutral-700 w-full m-0 rounded-2xl\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 templ.SafeURL
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs("./pages/" + page.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 16, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 20, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><h3 class=\"p-2 pb-1 font-semibold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"w-full\"><div class=\"hover:bg-neutral-300 dark:hover:bg-neutral-700 w-full m-0 px-2\"><h3 class=\"p-2 pb-1 font-semibold hover:underline\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(page.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 17, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 23, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3></a><p class=\"p-2 text-sm text-neutral-500 dark:text-neutral-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3><p class=\"p-2 text-sm text-neutral-500 dark:text-neutral-400\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(page.Preview)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 20, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/home.templ`, Line: 26, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "...</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "...</p></div></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

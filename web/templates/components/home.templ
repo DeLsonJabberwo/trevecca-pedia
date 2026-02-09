@@ -3,22 +3,29 @@ package components
 import "web/utils"
 
 templ HomeContent(pages []utils.PageInfoPrev) {
-    <div class="flex flex-col justify-center items-center border-r border-l border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 pt-6 pb-6 sm:w-full md:w-2/3 lg:w-1/2 mx-auto">
+    <div class="flex flex-col md:flex-row">
+    <div class="flex flex-col justify-center items-center border-r border-l border-b border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 py-6 px-0 md:mx-0 sm:w-full md:w-2/3 lg:w-1/2 sm:mx-auto md:ml-10 lg:ml-20 mr-0">
         <h2 class="text-left text-2xl mb-3 font-bold">Pages</h2>
         @PageList(pages...)
+    </div>
+    <div class="flex flex-col items-center border-r border-b border-neutral-200 dark:border-neutral-700 shadow-sm gap-1 p-3 py-6 px-0 md:mx-0 sm:w-full md:w-1/4 lg:w-1/3 sm:mx-auto ml-0 h-100">
+        <h3 class="text-left mb-3 font-bold">Categories</h3>
+    </div>
     </div>
     
 }
 
 templ PageList(pages ...utils.PageInfoPrev) {
     for _, page := range pages {
-        <div class="hover:bg-neutral-300 dark:hover:bg-neutral-700 w-full m-0 rounded-2xl">
-            <a href={ "./pages/" + page.Slug }><h3 class="p-2 pb-1 font-semibold">
+        <a href={ "./pages/" + page.Slug } class="w-full">
+        <div class="hover:bg-neutral-300 dark:hover:bg-neutral-700 w-full m-0 px-2">
+            <h3 class="p-2 pb-1 font-semibold hover:underline">
                 { page.Name }
-            </h3></a>
+            </h3>
             <p class="p-2 text-sm text-neutral-500 dark:text-neutral-400">
                 { page.Preview }...
             </p>
         </div>
+        </a>
     }
 }
