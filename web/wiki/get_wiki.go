@@ -51,7 +51,7 @@ func GetHome(c *gin.Context) {
 	page.Render(context.Background(), c.Writer)
 }
 
-func getPages() ([]utils.Page, error) {
+func getPages() ([]utils.PageInfoPrev, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/pages", config.WikiURL))
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func getPages() ([]utils.Page, error) {
 		return nil, err
 	}
 
-	var pages []utils.Page
+	var pages []utils.PageInfoPrev
 	err = json.Unmarshal(body, &pages)
 	if err != nil {
 		return nil, err
