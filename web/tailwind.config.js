@@ -1,11 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./**/*.templ"
+    "./templates/**/*.templ",
+    "./templates/**/*.html"
   ],
-  includeLanguages: {
-    templ: "html"
-  },
+  darkMode: 'class',
   theme: {
     extend: {},
   },

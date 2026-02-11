@@ -1,22 +1,31 @@
 package components
 
 templ Page(title string, children ...templ.Component) {
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <meta charset="UTF-8"/>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>{ title } | TreveccaPedia</title>
-            <link rel="stylesheet" href="/static/css/tailwind.css"/>
-        </head>
-        <body class="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 min-h-screen flex flex-col">
-            @Navigation()
-            <main class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 shadow-sm sticky top-0 z-50 transition-colors duration-300">
-                for _, child := range children {
-                    @child
-                }
-            </main>
-        </body>
-    </html>
-    
+	<!DOCTYPE html>
+	<html lang="en" class="scroll-smooth">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title } | TreveccaPedia</title>
+			<link rel="stylesheet" href="/static/css/tailwind.css"/>
+			<script>
+				// Check for dark mode preference before page renders
+				if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+					document.documentElement.classList.add('dark')
+				} else {
+					document.documentElement.classList.remove('dark')
+				}
+			</script>
+		</head>
+		<body class="min-h-screen flex flex-col bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-colors duration-300">
+			@Navigation()
+			<main class="flex-1">
+				for _, child := range children {
+					@child
+				}
+			</main>
+			@Footer()
+			<script src="/static/js/main.js"></script>
+		</body>
+	</html>
 }

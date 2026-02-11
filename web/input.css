@@ -4,10 +4,27 @@
 @source "./templates/**/*.{templ,html}";
 
 @layer base {
-  h1 {
-    font-size: 5em;
-  }
-  p {
-    /*background-color: blue;*/
-  }
+    #entry h1 {
+        font-size: 5em;
+    }
+    #entry h2 {
+        font-size: 2em;
+        padding-top: 1em;
+        margin-bottom: 0.5em;
+        border-bottom: 1px solid;
+    }
+    #entry p {
+        padding: 1em 0em;
+    }
+    #entry hr {
+        margin: 0.5em 0em;
+    }
+    #entry table {
+        border: 1px solid;
+        border-collapse: collapse;
+    }
+    #entry td, #entry th {
+        border: 1px solid;
+        padding: 10px;
+    }
 }
