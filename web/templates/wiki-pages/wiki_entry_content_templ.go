@@ -31,7 +31,7 @@ func WikiEntryContent(page utils.Page) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-700 p-6 prose prose-gray max-w-none dark:text-gray-300 prose-headings:[&>h1]:bg-gradient-to-r prose-headings:[&>h1]:from-indigo-500 prose-headings:[&>h1]:to-purple-600 prose-headings:[&>h1]:bg-clip-text prose-headings:[&>h1]:text-transparent dark:prose-headings:[&>h1]:from-indigo-400 dark:prose-headings:[&>h1]:to-purple-500 prose-a:[&>blockquote]:border-l-4 prose-a:[&>blockquote]:border-indigo-500 prose-a:[&>blockquote]:pl-4 prose-a:[&>blockquote]:bg-indigo-50 dark:prose-a:[&>blockquote]:bg-indigo-900/20 dark:prose-a:[&>blockquote]:border-indigo-400\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"entry\" class=\"prose prose-lg dark:prose-dark max-w-none px-4 sm:px-6 lg:px-8 py-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

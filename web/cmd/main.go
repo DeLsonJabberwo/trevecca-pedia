@@ -13,6 +13,7 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 
 	r.Static("./static", "static")
+	r.GET("/", wiki.GetHome)
 	r.GET("/pages/:id", wiki.GetPage)
 
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")

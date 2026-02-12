@@ -8,6 +8,8 @@ The goal is to provide a unified and common platform for the publishing, sharing
 
 Be sure to install the necessary tools from the [Common Tools](#common-tools) section.
 
+If you want to change or develop certain parts of the project, you'll need tools that are described in the [Developer Tools](#developer-tools) section.
+
 Each service is located in its own directory.
 
 Inside each service directory is a `README.md` for info on deploying and using that service.
@@ -62,3 +64,5 @@ This project mainly utilizes the command-line utility `psql` for testing databas
 
 ---
 
+
+## Developer Tools
