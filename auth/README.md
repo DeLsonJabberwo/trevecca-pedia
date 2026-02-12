@@ -99,6 +99,38 @@ Response:
 }
 ```
 
+### Register
+
+```
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "student@trevecca.edu",
+  "password": "mypassword123"
+}
+```
+
+**Requirements:**
+- Email must end with `@trevecca.edu`
+- Password must be at least 8 characters
+
+Success Response (201):
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "student@trevecca.edu",
+    "roles": ["contributor"]
+  }
+}
+```
+
+Error Responses:
+- `400 Bad Request`: Invalid email domain or password too short
+- `409 Conflict`: User with this email already exists
+
 ### Login
 
 ```
