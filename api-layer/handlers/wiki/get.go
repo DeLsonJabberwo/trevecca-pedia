@@ -101,3 +101,17 @@ func GetPageRevision(c *gin.Context) {
 
 	c.Data(res.StatusCode, res.Header.Get("Content-Type"), body)
 }
+
+func GetIndexablePages(c *gin.Context) {
+	resp, err := http.Get(fmt.Sprintf("%s/indexable-pages", config.WikiServiceURL))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to read response"})
+	}
+	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), body)
+}
+

@@ -26,6 +26,14 @@ type PageInfoPrev struct {
 	Preview			string		`json:"preview"`
 }
 
+type IndexInfo struct {
+	Slug			string		`json:"slug"`
+	Name			string		`json:"name"`
+	LastModified	*time.Time	`json:"last_modified"`
+	ArchiveDate		*time.Time	`json:"archive_date"`
+	Content			string		`json:"content"`
+}
+
 type NewPageRequest struct {
 	Slug			string		`json:"slug"`
 	Name			string		`json:"name"`

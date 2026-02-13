@@ -155,3 +155,35 @@ func GetPageInfoPreview(ctx context.Context, db *sql.DB, dataDir string, pageId 
 		Preview: preview,
 	}, nil
 }
+
+func GetIndexInfo(ctx context.Context, db *sql.DB, dataDir string, pageId string) (*IndexInfo, error) {
+	pageUUID, err := database.GetUUID(ctx, db, pageId)
+	if err != nil {
+		return nil, err
+	}
+	var indexInfo IndexInfo
+	var lastRev uuid.UUID
+	err = db.QueryRowContext(ctx, `
+		SELECT slug, name, last_revision_id, archive_date
+		FROM pages WHERE uuid=$1;
+	`, pageUUID).Scan(&indexInfo.Slug, &indexInfo.Name, &lastRev, &indexInfo.ArchiveDate)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("indexInfo (no content): %+v\n", indexInfo)
+	if lastRev != uuid.Nil {
+		err = db.QueryRowContext(ctx, `
+		SELECT date_time FROM revisions WHERE uuid=$1; 
+		`, lastRev).Scan(&indexInfo.LastModified)
+		if err != nil {
+			return nil, err
+		}
+	}
+	indexInfo.Content, err = filesystem.GetPageContent(ctx, db, dataDir, pageUUID)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("IndexInfo found: %s\n", indexInfo.Slug)
+	return &indexInfo, nil
+}
+

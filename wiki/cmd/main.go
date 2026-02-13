@@ -31,6 +31,8 @@ func main() {
 
 	r.GET("/pages/:id/revisions/:rev", handlers.PageRevisionHandler)
 
+	r.GET("/indexable-pages", handlers.IndexablePagesHandler)
+
 	// POST
 
 	r.POST("/pages/new", handlers.NewPageHandler)
