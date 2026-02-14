@@ -2,6 +2,7 @@ package main
 
 import (
 	"web/config"
+	"web/search"
 	"web/wiki"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ func main() {
 	r.Static("./static", "static")
 	r.GET("/", wiki.GetHome)
 	r.GET("/pages/:id", wiki.GetPage)
+	r.GET("/search", search.GetSearchPage)
 
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")
 	r.Run(":" + port)
