@@ -18,6 +18,7 @@ func SearchRequest(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err,
 		})
+		return
 	}
 	defer resp.Body.Close()
 
@@ -26,6 +27,7 @@ func SearchRequest(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err,
 		})
+		return
 	}
 
 	c.Data(http.StatusOK, resp.Header.Get("Content-Type"), body)

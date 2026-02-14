@@ -196,6 +196,7 @@ func IndexablePagesHandler(c *gin.Context) {
 		})
 		return
 	}
+	defer db.Close()
 	dataDir := utils.GetDataDir()
 
 	res, err := db.QueryContext(ctx, `
@@ -211,13 +212,17 @@ func IndexablePagesHandler(c *gin.Context) {
 		})
 		return
 	}
+	defer res.Close()
 
 	var slugs []string
 	for res.Next() {
 		var row string
-		res.Scan(&row)
+		if err := res.Scan(&row); err != nil {
+			werr := wikierrors.DatabaseError(err)
+			c.AbortWithStatusJSON(werr.Code, gin.H{"error": werr.Details})
+			return
+		}
 		slugs = append(slugs, row)
-		fmt.Printf("Slug received: %s\n", row)
 	}
 
 	var indexable []utils.IndexInfo

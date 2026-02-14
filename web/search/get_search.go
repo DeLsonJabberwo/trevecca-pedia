@@ -1,7 +1,6 @@
 package search
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,7 +35,7 @@ func GetSearchPage(c *gin.Context) {
 
 	searchContent := searchtemplates.SearchContent(query, pages)
 	component := components.Page("Search", searchContent)
-	component.Render(context.Background(), c.Writer)
+	component.Render(c.Request.Context(), c.Writer)
 }
 
 func searchPages(query string) ([]utils.PageInfoPrev, error) {

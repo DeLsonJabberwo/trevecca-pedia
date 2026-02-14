@@ -44,6 +44,7 @@ func GetPage(c *gin.Context) {
 	res, err := http.Get(fmt.Sprintf("%s/pages/%s", config.WikiServiceURL, id))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages."})
+		return
 	}
 	defer res.Body.Close()
 
@@ -107,11 +108,13 @@ func GetIndexablePages(c *gin.Context) {
 	resp, err := http.Get(fmt.Sprintf("%s/indexable-pages", config.WikiServiceURL))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
+		return
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to read response"})
+		return
 	}
 	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), body)
 }
