@@ -11,7 +11,6 @@ var WikiURL string
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-
 		log.Println("Warning: .env file not found, using defaults")
 	}
 

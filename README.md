@@ -19,6 +19,7 @@ Inside each service directory is a `README.md` for info on deploying and using t
 - [Wiki](./wiki/README.md)
 - [Wiki Database](./wiki-db/README.md)
 - [Wiki Filesystem](./wiki-fs/README.md)
+- [Search] (./search/README.md)
 
 ## Common Tools
 

@@ -1,0 +1,39 @@
+# fly.toml app configuration file for fly.io
+# See https://fly.io/docs/reference/configuration/
+
+app = 'trevecca-pedia-wiki'
+primary_region = 'iad'
+
+[build]
+
+[http_service]
+  internal_port = 9454
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Volume for persistent file storage (pages, revisions, snapshots)
+[[mounts]]
+  source = 'wiki_data'
+  destination = '/data'
+
+# Environment variables (non-sensitive)
+[env]
+  WIKI_SERVICE_PORT = "9454"
+  WIKI_DB_NAME = "wiki"
+  WIKI_DB_USER = "wiki_user"
+  WIKI_DATA_DIR = "/data"
+
+# Secrets to be set via `fly secrets set`
+# DO NOT commit actual values here
+# Run these commands after first deploy:
+#   fly secrets set WIKI_DB_HOST="your-db-host" --app trevecca-pedia-wiki
+#   fly secrets set WIKI_DB_PORT="5432" --app trevecca-pedia-wiki
+#   fly secrets set WIKI_DB_PASSWORD="your-db-password" --app trevecca-pedia-wiki

@@ -44,6 +44,8 @@ func getEnv(key, defaultValue string) string {
 }
 
 func GetDataDir() string {
+	if dataDir := os.Getenv("WIKI_DATA_DIR"); dataDir != "" {
+		return dataDir
+	}
 	return filepath.Join("..", "wiki-fs")
-
 }

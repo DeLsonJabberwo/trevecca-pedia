@@ -1,3 +1,5 @@
 tmp/
-
 go.sum
+.env
+.env.local
+.env.*.local

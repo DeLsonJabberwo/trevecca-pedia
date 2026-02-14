@@ -1,0 +1,30 @@
+# fly.toml app configuration file for fly.io
+# See https://fly.io/docs/reference/configuration/
+
+app = 'trevecca-pedia-api'
+primary_region = 'iad'
+
+[build]
+
+[http_service]
+  internal_port = 2745
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Environment variables (non-sensitive)
+[env]
+  API_LAYER_PORT = "2745"
+
+# Secrets to be set via `fly secrets set`
+# DO NOT commit actual values here
+# Run these commands after deploying wiki and search services:
+#   fly secrets set WIKI_SERVICE_URL="http://trevecca-pedia-wiki.internal:9454"
+#   fly secrets set SEARCH_SERVICE_URL="http://trevecca-pedia-search.internal:7724"
