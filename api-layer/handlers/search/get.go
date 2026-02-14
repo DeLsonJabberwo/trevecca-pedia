@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SearchRequest(c *gin.Context) {
 	query := c.Query("q")
-	url := fmt.Sprintf("%s/search?q=%s", config.SearchServiceURL, query)
+	url := fmt.Sprintf("%s/search?q=%s", config.SearchServiceURL, url.QueryEscape(query))
 	resp, err := http.Get(url)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
