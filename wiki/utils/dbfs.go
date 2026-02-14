@@ -187,8 +187,6 @@ func GetIndexInfo(ctx context.Context, db *sql.DB, dataDir string, pageId string
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("lastRev: %s\n", lastRev)
-	fmt.Printf("archiveDate: %s\n", archiveDate)
 	if lastRev != uuid.Nil {
 		err = db.QueryRowContext(ctx, `
 		SELECT date_time FROM revisions WHERE uuid=$1; 

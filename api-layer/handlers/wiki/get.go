@@ -105,7 +105,9 @@ func GetPageRevision(c *gin.Context) {
 }
 
 func GetIndexablePages(c *gin.Context) {
-	resp, err := http.Get(fmt.Sprintf("%s/indexable-pages", config.WikiServiceURL))
+	ind := c.DefaultQuery("index", "0")
+	count := c.DefaultQuery("count", "10")
+	resp, err := http.Get(fmt.Sprintf("%s/indexable-pages?index=%s&count=%s", config.WikiServiceURL, ind, count))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pages."})
 		return
