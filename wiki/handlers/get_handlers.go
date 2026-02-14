@@ -228,6 +228,7 @@ func IndexablePagesHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(werr.Code, gin.H{
 				"error": werr.Details,
 			})
+			return
 		}
 		if indexInfo == nil {
 			continue

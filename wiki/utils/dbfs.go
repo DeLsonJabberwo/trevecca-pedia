@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 	"wiki/database"
 	wikierrors "wiki/errors"
 	"wiki/filesystem"
@@ -146,12 +147,27 @@ func GetPageInfoPreview(ctx context.Context, db *sql.DB, dataDir string, pageId 
 	if err != nil {
 		return nil, err
 	}
+	var lastEditTime time.Time
+	if pageInfo.LastRevisionId == nil {
+		pageInfo.LastRevisionId = &uuid.Nil
+		lastEditTime = time.Time{}
+	} else {
+		err := db.QueryRowContext(ctx, `
+			SELECT date_time FROM revisions WHERE uuid=$1;
+		`, pageInfo.LastRevisionId).Scan(&lastEditTime)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if pageInfo.ArchiveDate == nil {
+		pageInfo.ArchiveDate = &time.Time{}
+	}
 	return &PageInfoPrev{
 		UUID: pageInfo.UUID,
 		Slug: pageInfo.Slug,
 		Name: pageInfo.Name,
-		LastRevisionId: pageInfo.LastRevisionId,
-		ArchiveDate: pageInfo.ArchiveDate,
+		LastEditTime: lastEditTime,
+		ArchiveDate: *pageInfo.ArchiveDate,
 		Preview: preview,
 	}, nil
 }
@@ -163,14 +179,16 @@ func GetIndexInfo(ctx context.Context, db *sql.DB, dataDir string, pageId string
 	}
 	var indexInfo IndexInfo
 	var lastRev uuid.UUID
+	var archiveDate *time.Time
 	err = db.QueryRowContext(ctx, `
 		SELECT slug, name, last_revision_id, archive_date
 		FROM pages WHERE uuid=$1;
-	`, pageUUID).Scan(&indexInfo.Slug, &indexInfo.Name, &lastRev, &indexInfo.ArchiveDate)
+	`, pageUUID).Scan(&indexInfo.Slug, &indexInfo.Name, &lastRev, &archiveDate)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("indexInfo (no content): %+v\n", indexInfo)
+	fmt.Printf("lastRev: %s\n", lastRev)
+	fmt.Printf("archiveDate: %s\n", archiveDate)
 	if lastRev != uuid.Nil {
 		err = db.QueryRowContext(ctx, `
 		SELECT date_time FROM revisions WHERE uuid=$1; 
@@ -178,12 +196,18 @@ func GetIndexInfo(ctx context.Context, db *sql.DB, dataDir string, pageId string
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		indexInfo.LastModified = time.Time{}
+	}
+	if archiveDate != nil {
+		indexInfo.ArchiveDate = *archiveDate
+	} else {
+		indexInfo.ArchiveDate = time.Time{}
 	}
 	indexInfo.Content, err = filesystem.GetPageContent(ctx, db, dataDir, pageUUID)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("IndexInfo found: %s\n", indexInfo.Slug)
 	return &indexInfo, nil
 }
 

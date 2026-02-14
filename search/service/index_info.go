@@ -15,8 +15,8 @@ import (
 type IndexInfo struct {
 	Slug         string     `json:"slug"`
 	Name         string     `json:"name"`
-	LastModified *time.Time `json:"last_modified"`
-	ArchiveDate  *time.Time `json:"archive_date"`
+	LastModified time.Time 	`json:"last_modified"`
+	ArchiveDate  time.Time 	`json:"archive_date"`
 	Content      string     `json:"content"`
 }
 

@@ -59,8 +59,6 @@ func searchPages(query string) ([]utils.PageInfoPrev, error) {
 		return nil, err
 	}
 
-	log.Printf("Search for '%s' returned %d results: %v", query, searchResponse.Total, searchResponse.Results)
-
 	if len(searchResponse.Results) == 0 {
 		return []utils.PageInfoPrev{}, nil
 	}
