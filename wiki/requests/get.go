@@ -104,6 +104,24 @@ func GetPages(ctx context.Context, db *sql.DB, dataDir string, ind int, count in
 	return pages, nil
 }
 
+func GetPagesBySlugs(ctx context.Context, db *sql.DB, dataDir string, slugList []string) []utils.PageInfoPrev {
+	var pages []utils.PageInfoPrev
+	for _, slug := range slugList {
+		uuid, err := database.GetUUID(ctx, db, slug)
+		if err != nil {
+			continue
+		}
+		pageInfoPrev, err := utils.GetPageInfoPreview(ctx, db, dataDir, uuid)
+		if err != nil {
+			continue
+		}
+		if pageInfoPrev != nil {
+			pages = append(pages, *pageInfoPrev)
+		}
+	}
+	return pages
+}
+
 func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string, cat int, ind int, count int) ([]utils.PageInfoPrev, error) {
 	var pagesCount int
 	err := db.QueryRowContext(

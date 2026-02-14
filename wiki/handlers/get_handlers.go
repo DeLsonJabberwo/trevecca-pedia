@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"wiki/database"
 	wikierrors "wiki/errors"
 	"wiki/requests"
@@ -39,8 +40,13 @@ func PagesHandler(c *gin.Context) {
 	if err != nil {
 		count = 10
 	}
+	slugs := c.DefaultQuery("slugs", "")
 	var pages []utils.PageInfoPrev
-	if cat == 0 {
+
+	if slugs != "" {
+		slugList := strings.Split(slugs, ",")
+		pages = requests.GetPagesBySlugs(ctx, db, dataDir, slugList)
+	} else if cat == 0 {
 		pages, err = requests.GetPages(ctx, db, dataDir, ind, count)
 		if err != nil {
 			werr, is := wikierrors.AsWikiError(err)
