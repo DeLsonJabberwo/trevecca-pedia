@@ -2,6 +2,8 @@
 
 @source "./templates/**/*.{templ,html}";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
     #entry h1 {
         font-size: 5em;

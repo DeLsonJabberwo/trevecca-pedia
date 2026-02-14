@@ -792,42 +792,42 @@
     }
   }
   .dark\:block {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       display: block;
     }
   }
   .dark\:hidden {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       display: none;
     }
   }
   .dark\:border-neutral-700 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       border-color: var(--color-neutral-700);
     }
   }
   .dark\:border-neutral-800 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       border-color: var(--color-neutral-800);
     }
   }
   .dark\:bg-neutral-100 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: var(--color-neutral-100);
     }
   }
   .dark\:bg-neutral-700 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: var(--color-neutral-700);
     }
   }
   .dark\:bg-neutral-800 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: var(--color-neutral-800);
     }
   }
   .dark\:bg-neutral-800\/50 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: color-mix(in srgb, oklch(26.9% 0 0) 50%, transparent);
       @supports (color: color-mix(in lab, red, red)) {
         background-color: color-mix(in oklab, var(--color-neutral-800) 50%, transparent);
@@ -835,12 +835,12 @@
     }
   }
   .dark\:bg-neutral-900 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: var(--color-neutral-900);
     }
   }
   .dark\:bg-neutral-900\/80 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       background-color: color-mix(in srgb, oklch(20.5% 0 0) 80%, transparent);
       @supports (color: color-mix(in lab, red, red)) {
         background-color: color-mix(in oklab, var(--color-neutral-900) 80%, transparent);
@@ -848,42 +848,42 @@
     }
   }
   .dark\:text-neutral-100 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-100);
     }
   }
   .dark\:text-neutral-200 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-200);
     }
   }
   .dark\:text-neutral-300 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-300);
     }
   }
   .dark\:text-neutral-400 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-400);
     }
   }
   .dark\:text-neutral-500 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-500);
     }
   }
   .dark\:text-neutral-600 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-600);
     }
   }
   .dark\:text-neutral-900 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       color: var(--color-neutral-900);
     }
   }
   .dark\:group-hover\:text-neutral-300 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:is(:where(.group):hover *) {
         @media (hover: hover) {
           color: var(--color-neutral-300);
@@ -892,7 +892,7 @@
     }
   }
   .dark\:group-hover\:text-neutral-400 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:is(:where(.group):hover *) {
         @media (hover: hover) {
           color: var(--color-neutral-400);
@@ -901,7 +901,7 @@
     }
   }
   .dark\:hover\:border-neutral-500 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:hover {
         @media (hover: hover) {
           border-color: var(--color-neutral-500);
@@ -910,7 +910,7 @@
     }
   }
   .dark\:hover\:border-neutral-600 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:hover {
         @media (hover: hover) {
           border-color: var(--color-neutral-600);
@@ -919,7 +919,7 @@
     }
   }
   .dark\:hover\:bg-neutral-200 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:hover {
         @media (hover: hover) {
           background-color: var(--color-neutral-200);
@@ -928,7 +928,7 @@
     }
   }
   .dark\:hover\:bg-neutral-800 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:hover {
         @media (hover: hover) {
           background-color: var(--color-neutral-800);
@@ -937,7 +937,7 @@
     }
   }
   .dark\:hover\:text-neutral-100 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:hover {
         @media (hover: hover) {
           color: var(--color-neutral-100);
@@ -946,7 +946,7 @@
     }
   }
   .dark\:focus\:ring-neutral-600 {
-    @media (prefers-color-scheme: dark) {
+    &:where(.dark, .dark *) {
       &:focus {
         --tw-ring-color: var(--color-neutral-600);
       }
