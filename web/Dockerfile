@@ -9,8 +9,9 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy CSS source
+# Copy CSS source AND templates for Tailwind scanning
 COPY input.css ./
+COPY templates ./templates/
 
 # Build Tailwind CSS
 RUN npx tailwindcss -i ./input.css -o ./static/css/tailwind.css --minify
