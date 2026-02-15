@@ -1,0 +1,29 @@
+# fly.toml app configuration file for fly.io
+# See https://fly.io/docs/reference/configuration/
+
+app = 'trevecca-pedia-web'
+primary_region = 'iad'
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Environment variables (non-sensitive)
+[env]
+  WEB_SERVICE_PORT = "8080"
+
+# Secrets to be set via `fly secrets set`
+# DO NOT commit actual values here
+# Run these commands after deploying API layer:
+#   fly secrets set API_LAYER_URL="https://trevecca-pedia-api.fly.dev/v1" --app trevecca-pedia-web

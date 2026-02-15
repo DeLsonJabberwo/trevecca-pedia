@@ -1,5 +1,7 @@
 tmp/
 node_modules/
 go.sum
-
 tailwindcss
+.env
+.env.local
+.env.*.local
