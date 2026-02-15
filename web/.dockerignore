@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Environment variables (secrets)
+.env
+.env.local
+.env.*.local
+
+# Development files
+.air.toml
+tmp/
+
+# Node.js
+node_modules/
+package-lock.json
+bun.lock
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+web-service
+tailwindcss
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+docs/
+
+# CSS (will be built in container)
+static/css/tailwind.css
+
+# Test files
+*_test.go

@@ -45,8 +45,9 @@ Deploy in this order to avoid circular dependencies:
 3. **API Layer** (api-layer) - Deploy with wiki URL only initially
 4. **Search Service** (search) - Depends on API layer for data (can now fetch)
 5. **API Layer** (api-layer) - Redeploy with search URL added
+6. **Web Frontend** (web) - Depends on fully configured API layer
 
-**Why this order?** The search service needs the API layer URL to fetch page data, but the API layer also needs the search service URL to proxy requests. By deploying the API layer twice (steps 3 and 5), we break this circular dependency.
+**Why this order?** The search service needs the API layer URL to fetch page data, but the API layer also needs the search service URL to proxy requests. By deploying the API layer twice (steps 3 and 5), we break this circular dependency. The web frontend is deployed last as it's stateless and only needs the public API layer URL.
 
 ## 1. Deploy Database
 
@@ -153,6 +154,29 @@ fly deploy
 ```
 
 **Done!** All services are now fully configured and communicating properly.
+
+## 6. Deploy Web Frontend
+
+The web frontend is a stateless Go application with Tailwind CSS that serves the user interface.
+
+```bash
+cd web
+
+# Create the app
+fly apps create trevecca-pedia-web
+
+# Set API layer URL (public URL for the web frontend to use)
+fly secrets set API_LAYER_URL="https://trevecca-pedia-api.fly.dev/v1" --app trevecca-pedia-web
+
+# Deploy
+fly deploy
+```
+
+**Notes:**
+- The web service is **stateless** (no persistent volume needed)
+- CSS is built automatically during the Docker build process
+- Static files and templates are included in the container
+- The web frontend is the public-facing entry point for users
 
 ## Volume Backup Strategy
 
