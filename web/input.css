@@ -1,7 +1,8 @@
 @import "tailwindcss";
-@config "./tailwind.config.js";
 
 @source "./templates/**/*.{templ,html}";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
     #entry h1 {

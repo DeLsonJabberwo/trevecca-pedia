@@ -32,7 +32,6 @@ func GetPage(c *gin.Context) {
 	var page utils.Page
 	err = json.Unmarshal(body, &page)
 	if err != nil {
-		fmt.Printf("%s\n", body)
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Couldn't parse json from API layer: %w\n", err))
 	}
 
@@ -49,7 +48,7 @@ func GetHome(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Couldn't fetch page info: %w\n", err))
 	}
 	if len(pages) == 0 {
-		pages = append(pages, utils.PageInfoPrev{UUID: uuid.UUID{}, Slug: "", Name: "Not Found", ArchiveDate: nil, LastEditUUID: nil, LastEditTime: time.Now(), Preview: "No pages found"})
+		pages = append(pages, utils.PageInfoPrev{UUID: uuid.UUID{}, Slug: "", Name: "Not Found", LastEditTime: time.Time{}, ArchiveDate: time.Time{}, Preview: "No pages found"})
 	}
 	homeComp := components.HomeContent(pages)
 	page := components.Page("TreveccaPedia", homeComp)
