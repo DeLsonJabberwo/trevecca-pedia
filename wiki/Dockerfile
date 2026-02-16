@@ -7,17 +7,12 @@ RUN apk add --no-cache git
 # Set working directory
 WORKDIR /app
 
-# Generate go.sum
-RUN go mod tidy
-
-# Copy go mod files
-COPY go.mod ./
-
-# Download dependencies
-RUN go mod download
-
 # Copy source code
 COPY . .
+
+# Generate go.sum and download dependencies
+RUN go mod tidy
+RUN go mod download
 
 # Build the application
 # CGO_ENABLED=0 for static binary
