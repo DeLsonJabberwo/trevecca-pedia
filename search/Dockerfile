@@ -7,11 +7,11 @@ RUN apk add --no-cache git
 # Set working directory
 WORKDIR /app
 
-# Generate go.sum
-RUN go mod tidy
-
 # Copy go mod files
 COPY go.mod ./
+
+# Generate go.sum
+RUN go mod tidy
 
 # Download dependencies
 RUN go mod download
@@ -20,7 +20,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o tmp/search-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o search-service ./cmd/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -38,7 +38,7 @@ RUN mkdir -p /index && chown -R appuser:appuser /index
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/tmp/search-service .
+COPY --from=builder /app/search-service .
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
