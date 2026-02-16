@@ -17,7 +17,7 @@ RUN go mod download
 # Build the application
 # CGO_ENABLED=0 for static binary
 # -ldflags="-w -s" for smaller binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o wiki-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o tmp/wiki-service ./cmd/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -35,7 +35,7 @@ RUN mkdir -p /data && chown -R appuser:appuser /data
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/wiki-service .
+COPY --from=builder /app/tmp/wiki-service .
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
