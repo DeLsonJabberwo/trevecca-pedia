@@ -11,7 +11,7 @@ WORKDIR /app
 COPY go.mod ./
 
 # Download dependencies
-RUN go get search/cmd
+RUN go mod download
 
 # Copy source code
 COPY . .
