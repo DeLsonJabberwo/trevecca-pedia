@@ -8,6 +8,7 @@ import (
 )
 
 var WikiURL string
+var IndexDir string
 
 func init() {
 	if err := godotenv.Load(); err != nil {
@@ -15,6 +16,7 @@ func init() {
 	}
 
 	WikiURL = GetEnv("API_LAYER_URL", "http://127.0.0.1:2745/v1/wiki")
+	IndexDir = GetEnv("INDEX_DIR", "../index")
 }
 
 func GetEnv(key, fallback string) string {

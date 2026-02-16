@@ -42,7 +42,7 @@ func SearchHandler(c *gin.Context) {
 }
 
 func ReindexHandler(c *gin.Context) {
-	err := searchService.IndexAll("")
+	err := searchService.IndexAll()
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, fmt.Sprintf("err: %s", err))
 		return

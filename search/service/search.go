@@ -12,18 +12,29 @@ type SearchService struct {
 
 func NewSearchService(indexPath string) (*SearchService, error) {
 	idx, err := bleve.Open(indexPath)
-	if err == bleve.ErrorIndexPathDoesNotExist {
-		mapping := buildIndexMapping()
-		idx, err = bleve.New(indexPath, mapping)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create index: %w", err)
-		}
-	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to open index: %w", err)
+		// Handle both "path doesn't exist" and "metadata missing" cases
+		if err == bleve.ErrorIndexPathDoesNotExist || isMetadataMissingError(err) {
+			mapping := buildIndexMapping()
+			idx, err = bleve.New(indexPath, mapping)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create index: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to open index: %w", err)
+		}
 	}
 
 	return &SearchService{index: idx}, nil
+}
+
+func isMetadataMissingError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return errStr == "cannot open index, metadata missing" ||
+		errStr == "cannot open index, index path is a directory but does not contain an index"
 }
 
 type PageDocument struct {
@@ -31,7 +42,7 @@ type PageDocument struct {
 	Content string `json:"content"`
 }
 
-func (s *SearchService) IndexAll(pagesDir string) error {
+func (s *SearchService) IndexAll() error {
 	batch := s.index.NewBatch()
 	batchLen := 10
 	currInd := 0

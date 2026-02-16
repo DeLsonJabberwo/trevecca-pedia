@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"os"
+	"search/config"
 	"search/handlers"
 	"search/service"
 
@@ -10,26 +10,16 @@ import (
 )
 
 func main() {
-	pagesDir := os.Getenv("PAGES_DIR")
-	if pagesDir == "" {
-		pagesDir = "../wiki-fs/pages"
-	}
-
-	indexDir := os.Getenv("INDEX_DIR")
-	if indexDir == "" {
-		indexDir = "../wiki-fs/index"
-	}
-
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 	gin.SetMode(gin.DebugMode)
 
-	s, err := service.NewSearchService(indexDir)
+	s, err := service.NewSearchService(config.IndexDir)
 	if err != nil {
 		log.Fatalf("Couldn't create search service: %s\n", err)
 	}
 
-	err = s.IndexAll(pagesDir)
+	err = s.IndexAll()
 	if err != nil {
 		log.Fatalf("Couldn't index search service: %s\n", err)
 	}
