@@ -24,20 +24,15 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod ./
-
-# Generate go.sum
-RUN go mod tidy
-
-# Download dependencies
-RUN go mod download
-
-# Copy source code
+# Copy source code first (needed for go mod tidy to work properly)
 COPY . .
 
+# Generate go.sum and download dependencies
+RUN go mod tidy
+RUN go mod download
+
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o web-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o tmp/web-service ./cmd/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -52,7 +47,7 @@ RUN adduser -D -s /bin/sh appuser
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=go-builder /app/web-service .
+COPY --from=go-builder /app/tmp/web-service .
 
 # Copy static files (including built CSS)
 COPY --from=css-builder /app/static/css/tailwind.css ./static/css/
