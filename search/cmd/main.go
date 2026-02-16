@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"search/config"
 	"search/handlers"
 	"search/service"
@@ -21,11 +22,14 @@ func main() {
 
 	err = s.IndexAll()
 	if err != nil {
-		log.Fatalf("Couldn't index search service: %s\n", err)
+		log.Printf("Warning: Couldn't index on startup: %s\n", err)
 	}
 
 	handlers.SetSearchService(s)
 
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
 	r.GET("/search", handlers.SearchHandler)
 	r.POST("/reindex", handlers.ReindexHandler)
 
