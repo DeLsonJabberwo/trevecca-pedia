@@ -76,9 +76,7 @@ fly apps create trevecca-pedia-wiki
 fly volumes create wiki_data --region iad --size 1 --app trevecca-pedia-wiki
 
 # Set database secrets (use values from step 1)
-fly secrets set WIKI_DB_HOST="your-db-host.internal" --app trevecca-pedia-wiki
-fly secrets set WIKI_DB_PORT="5432" --app trevecca-pedia-wiki
-fly secrets set WIKI_DB_PASSWORD="your-db-password" --app trevecca-pedia-wiki
+fly postgres connect --app trevecca-pedia-db
 
 # Deploy
 fly deploy
