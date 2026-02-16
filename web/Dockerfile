@@ -24,11 +24,14 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
+# Generate go.sum
+RUN go mod tidy
+
 # Copy go mod files
 COPY go.mod ./
 
 # Download dependencies
-RUN go mod tidy && go mod download
+RUN go mod download
 
 # Copy source code
 COPY . .
