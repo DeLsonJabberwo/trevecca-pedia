@@ -1,5 +1,7 @@
-# fly.toml app configuration file for fly.io
-# See https://fly.io/docs/reference/configuration/
+# fly.toml app configuration file generated for trevecca-pedia-search on 2026-02-16T05:15:53Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = 'trevecca-pedia-search'
 primary_region = 'iad'
@@ -15,20 +17,7 @@ primary_region = 'iad'
   processes = ['app']
 
 [[vm]]
-  memory = '512mb'
+  memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-
-# Volume for search index persistence
-[[mounts]]
-  source = 'search_index'
-  destination = '/index'
-
-# Environment variables (non-sensitive)
-[env]
-  INDEX_DIR = "/index"
-
-# Secrets to be set via `fly secrets set`
-# DO NOT commit actual values here
-# After deploying api-layer, run:
-#   fly secrets set API_LAYER_URL="https://trevecca-pedia-api.fly.dev/v1/wiki"
+  memory_mb = 1024
