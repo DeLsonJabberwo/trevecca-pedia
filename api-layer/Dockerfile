@@ -8,7 +8,7 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 # Copy go mod files
-COPY go.mod go.sum ./
+COPY go.mod ./
 
 # Download dependencies
 RUN go mod download
@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o api-layer-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o tmp/api-layer-service ./cmd/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -32,7 +32,7 @@ RUN adduser -D -s /bin/sh appuser
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/api-layer-service .
+COPY --from=builder /app/tmp/api-layer-service .
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
