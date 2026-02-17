@@ -148,7 +148,7 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string, cat int, 
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
 	}
-	uuids.Close()
+	defer uuids.Close()
 
 	var pages []utils.PageInfoPrev
 

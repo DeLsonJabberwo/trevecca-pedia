@@ -90,7 +90,6 @@ func PageHandler(c *gin.Context) {
 	defer db.Close()
 	dataDir := utils.GetDataDir()
 
-	defer db.Close()
 	pageId := c.Param("id")
 	page, err := requests.GetPage(ctx, db, dataDir, pageId)
 	if err != nil {
