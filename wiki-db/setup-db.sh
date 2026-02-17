@@ -1,12 +1,13 @@
 #!/bin/bash
-# setup-db.sh - Initialize database schema on fly.io Postgres
-# This script applies schema files 01 and 02 (structure), skipping 03 (seed data)
+# setup-db.sh - Apply database schema to fly.io Postgres
+# This script only applies schema files 01 and 02 (structure), skipping 03 (seed data)
+# You must handle postgres connection and secrets configuration separately
 
 set -e
 
 DB_APP_NAME="${1:-trevecca-pedia-db}"
 
-echo "Setting up database for: $DB_APP_NAME"
+echo "Applying schema to database: $DB_APP_NAME"
 echo ""
 
 # Check if fly CLI is installed
@@ -23,21 +24,15 @@ if ! fly auth whoami &> /dev/null; then
     exit 1
 fi
 
-# Get the database connection URL
-echo "Getting database connection URL..."
-DB_URL=$(fly postgres connect --app "$DB_APP_NAME" --command "\\conninfo" 2>/dev/null || echo "")
-
-if [ -z "$DB_URL" ]; then
-    echo "Error: Could not get database connection info"
-    echo "Make sure your Postgres app is running: fly status --app $DB_APP_NAME"
+# Check if database app exists
+if ! fly status --app "$DB_APP_NAME" &> /dev/null; then
+    echo "Error: Database app '$DB_APP_NAME' not found"
+    echo "Create it first: fly postgres create --name $DB_APP_NAME"
     exit 1
 fi
 
-echo "Connection info retrieved"
-echo ""
-
 # Apply schema files 01 and 02 only (not 03 which contains seed data)
-echo "Applying schema..."
+echo "Applying schema files..."
 
 for file in init/01-schema.sql init/02-schema.sql; do
     if [ -f "$file" ]; then
@@ -51,18 +46,12 @@ done
 
 echo ""
 echo "========================================="
-echo "Database schema applied successfully!"
+echo "Schema applied successfully!"
 echo "========================================="
 echo ""
 echo "Note: Seed data (init/03-schema.sql) was NOT applied."
-echo "The database is ready for use with an empty schema."
 echo ""
-echo "Next steps:"
-echo "1. Get the database connection string:"
-echo "   fly postgres connect --app $DB_APP_NAME --command \"\\conninfo\""
+echo "Next steps for connecting your wiki service:"
+echo "1. Get connection info: fly postgres connect --app $DB_APP_NAME --command \"\\conninfo\""
+echo "2. Set secrets manually or use: fly postgres attach $DB_APP_NAME --app <wiki-app-name>"
 echo ""
-echo "2. Set the secrets for your wiki service:"
-echo "   cd ../wiki"
-echo "   fly secrets set WIKI_DB_HOST=<host> --app trevecca-pedia-wiki"
-echo "   fly secrets set WIKI_DB_PORT=<port> --app trevecca-pedia-wiki"
-echo "   fly secrets set WIKI_DB_PASSWORD=<password> --app trevecca-pedia-wiki"
