@@ -6,8 +6,10 @@
 set -e
 
 DB_APP_NAME="${1:-trevecca-pedia-db}"
+DB_NAME="${2:-trevecca_pedia_wiki}"  # Default to the database created by fly postgres attach
 
-echo "Applying schema to database: $DB_APP_NAME"
+echo "Applying schema to database app: $DB_APP_NAME"
+echo "Target database: $DB_NAME"
 echo ""
 
 # Check if fly CLI is installed
@@ -36,8 +38,8 @@ echo "Applying schema files..."
 
 for file in init/01-schema.sql init/02-schema.sql; do
     if [ -f "$file" ]; then
-        echo "Applying $file..."
-        fly postgres connect --app "$DB_APP_NAME" < "$file"
+		echo "Applying $file to database '$DB_NAME'..."
+        fly postgres connect --app "$DB_APP_NAME" --database "$DB_NAME" < "$file"
         echo "✓ Applied $file"
     else
         echo "Warning: $file not found"
