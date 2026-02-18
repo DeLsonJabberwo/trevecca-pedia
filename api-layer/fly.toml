@@ -26,5 +26,9 @@ primary_region = 'iad'
 # Secrets to be set via `fly secrets set`
 # DO NOT commit actual values here
 # Run these commands after deploying wiki and search services:
-#   fly secrets set WIKI_SERVICE_URL="http://trevecca-pedia-wiki.internal:9454"
-#   fly secrets set SEARCH_SERVICE_URL="http://trevecca-pedia-search.internal:7724"
+#   fly secrets set WIKI_SERVICE_URL="https://trevecca-pedia-wiki.fly.dev"
+#   fly secrets set SEARCH_SERVICE_URL="https://trevecca-pedia-search.fly.dev"
+#
+# Note: Using external URLs (https://...) instead of internal (.internal:port)
+# ensures that auto_start_machines works correctly. Internal requests bypass
+# the Fly proxy and cannot wake up suspended machines.
