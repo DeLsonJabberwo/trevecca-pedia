@@ -1,15 +1,18 @@
 #!/bin/bash
 # setup-db.sh - Apply database schema to fly.io Postgres
 # This script only applies schema files 01 and 02 (structure), skipping 03 (seed data)
-# You must handle postgres connection and secrets configuration separately
+# NOTE: You must run 'fly postgres attach' before this script to create the database
 
 set -e
 
 DB_APP_NAME="${1:-trevecca-pedia-db}"
-DB_NAME="${2:-trevecca_pedia_wiki}"  # Default to the database created by fly postgres attach
+DB_NAME="${2:-trevecca_pedia_wiki}"
 
-echo "Applying schema to database app: $DB_APP_NAME"
+echo "========================================="
+echo "Database Schema Setup"
+echo "Database app: $DB_APP_NAME"
 echo "Target database: $DB_NAME"
+echo "========================================="
 echo ""
 
 # Check if fly CLI is installed
@@ -33,16 +36,20 @@ if ! fly status --app "$DB_APP_NAME" &> /dev/null; then
     exit 1
 fi
 
+echo "Applying schema to database '$DB_NAME'..."
+echo ""
+
 # Apply schema files 01 and 02 only (not 03 which contains seed data)
 echo "Applying schema files..."
 
 for file in init/01-schema.sql init/02-schema.sql; do
     if [ -f "$file" ]; then
-		echo "Applying $file to database '$DB_NAME'..."
-        fly postgres connect --app "$DB_APP_NAME" --database "$DB_NAME" < "$file"
-        echo "✓ Applied $file"
+        echo "  Applying $file..."
+        # Use printf to ensure proper newline handling and add \q to exit psql
+        printf '%s\n\\q\n' "$(cat "$file")" | fly postgres connect --app "$DB_APP_NAME" --database "$DB_NAME"
+        echo "  ✓ Applied $file"
     else
-        echo "Warning: $file not found"
+        echo "  Warning: $file not found, skipping"
     fi
 done
 
@@ -52,8 +59,6 @@ echo "Schema applied successfully!"
 echo "========================================="
 echo ""
 echo "Note: Seed data (init/03-schema.sql) was NOT applied."
-echo ""
-echo "Next steps for connecting your wiki service:"
-echo "1. Get connection info: fly postgres connect --app $DB_APP_NAME --command \"\\conninfo\""
-echo "2. Set secrets manually or use: fly postgres attach $DB_APP_NAME --app <wiki-app-name>"
+echo "      To apply seed data, run:"
+echo "      printf '%s\\n\\\\q\\n' \"\$(cat init/03-schema.sql)\" | fly postgres connect --app $DB_APP_NAME --database $DB_NAME"
 echo ""
