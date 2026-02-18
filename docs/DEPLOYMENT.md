@@ -51,18 +51,30 @@ Deploy in this order to avoid circular dependencies:
 
 ## 1. Deploy Database
 
+For production with automatic failover, create 2 machines (primary + replica):
+
 ```bash
 cd wiki-db
 
-# Create Postgres cluster
-fly postgres create --name trevecca-pedia-db --region iad --vm-size shared-cpu-1x --volume-size 1
+# Create Postgres cluster with 2 machines for HA
+fly postgres create \
+  --name trevecca-pedia-db \
+  --region iad \
+  --vm-size shared-cpu-1x \
+  --volume-size 1 \
+  --initial-cluster-size 2
 
 # Apply schema (without seed data)
-./setup-db.sh trevecca-pedia-db
+./setup-db.sh trevecca-pedia-db trevecca-pedia-wiki
 
 # Get connection info
 fly postgres connect --app trevecca-pedia-db --command "\conninfo"
+
+# Verify cluster health
+fly status --app trevecca-pedia-db
 ```
+
+**Note:** The 2-machine setup provides automatic failover. If the primary fails, the replica takes over. All connection strings use the internal hostname which automatically routes to the current primary.
 
 ## 2. Deploy Wiki Service
 
