@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -212,7 +213,9 @@ func IndexablePagesHandler(c *gin.Context) {
 		return
 	}
 	defer res.Close()
+	log.Printf("page list acquired.\n")
 
+	log.Printf("slugs:\n")
 	var slugs []string
 	for res.Next() {
 		var row string
@@ -222,8 +225,10 @@ func IndexablePagesHandler(c *gin.Context) {
 			return
 		}
 		slugs = append(slugs, row)
+		log.Printf("%s\n", row)
 	}
 
+	log.Printf("indexable:\n")
 	var indexable []utils.IndexInfo
 	for _, page := range slugs {
 		indexInfo, err := utils.GetIndexInfo(ctx, db, dataDir, page)
@@ -232,12 +237,14 @@ func IndexablePagesHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(werr.Code, gin.H{
 				"error": werr.Details,
 			})
+			log.Printf("error: %s\n", err)
 			return
 		}
 		if indexInfo == nil {
 			continue
 		}
 		indexable = append(indexable, *indexInfo)
+		log.Printf("%+v\n", indexInfo)
 	}
 
 	c.JSON(http.StatusOK, indexable)
