@@ -7,7 +7,7 @@ Set up go:
 go get web/cmd
 ```
 
-Make sure to set up environment variables (in `wiki` directory):
+Make sure to set up environment variables (in `web` directory):
 ```
 cp .env.example ./.env
 source .env
@@ -21,6 +21,20 @@ go install github.com/a-h/templ/cmd/templ@latest
 Using air in the `web` directory:
 ```
 air .
+```
+
+Generate tailwind (also in the `web` directory):
+For development:
+```
+npm run watch:css
+
+bun watch:css
+```
+For production:
+```
+npm run build:css
+
+bun build:css
 ```
 
 ## Info
