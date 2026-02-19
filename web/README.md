@@ -23,19 +23,19 @@ Using air in the `web` directory:
 air .
 ```
 
-Generate tailwind (also in the `web` directory):
-For development:
-```
-npm run watch:css
-
-bun watch:css
-```
-For production:
-```
-npm run build:css
-
-bun build:css
-```
+Generate TailwindCSS using npm or bun (also in the `web` directory):
+- For development:
+    ```
+    npm run watch:css
+    
+    bun watch:css
+    ```
+- For production:
+    ```
+    npm run build:css
+    
+    bun build:css
+    ```
 
 ## Info
 
