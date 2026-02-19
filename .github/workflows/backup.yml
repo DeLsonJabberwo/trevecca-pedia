@@ -1,4 +1,4 @@
-name: Daily Volume Backup
+name: Daily Fly.io Backups
 
 on:
   schedule:
@@ -15,90 +15,96 @@ env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
 jobs:
-  backup-wiki-volume:
-    name: Backup Wiki Data Volume
+  backup-volumes:
+    name: Backup ${{ matrix.volume_name }} Volume
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app: trevecca-pedia-wiki
+            volume_name: wiki_data
+          - app: trevecca-pedia-search
+            volume_name: search_index
+
     steps:
       - name: Install flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Create wiki volume snapshot
+      - name: Get volume ID
+        id: get-volume
         run: |
-          echo "Creating snapshot for wiki_data volume..."
-          fly volumes snapshots create wiki_data \
-            --app trevecca-pedia-wiki \
-            --yes
-          echo "Snapshot created successfully"
+          echo "🔍 Looking up volume ID for ${{ matrix.volume_name }}..."
+          VOLUME_ID=$(fly volumes list --app ${{ matrix.app }} --json | \
+            jq -r '.[] | select(.name == "${{ matrix.volume_name }}") | .id')
+          
+          if [ -z "$VOLUME_ID" ]; then
+            echo "❌ Volume '${{ matrix.volume_name }}' not found!"
+            exit 1
+          fi
+          
+          echo "volume_id=$VOLUME_ID" >> $GITHUB_OUTPUT
+          echo "✅ Using volume ID: $VOLUME_ID"
 
-      - name: Cleanup old wiki snapshots (keep 30)
+      - name: Create snapshot
         run: |
-          echo "Cleaning up old wiki snapshots..."
-          # Get snapshot IDs and delete oldest ones, keeping only 30 most recent
-          fly volumes snapshots list wiki_data --app trevecca-pedia-wiki --json | \
+          echo "📸 Creating snapshot for ${{ matrix.volume_name }}..."
+          fly volumes snapshots create ${{ steps.get-volume.outputs.volume_id }} \
+            --app ${{ matrix.app }} --yes
+          echo "✅ Snapshot created"
+
+      - name: Cleanup old snapshots (keep 30)
+        run: |
+          echo "🧹 Cleaning up old snapshots (keeping 30 newest)..."
+          fly volumes snapshots list ${{ steps.get-volume.outputs.volume_id }} \
+            --app ${{ matrix.app }} --json | \
             jq -r '.[30:][]?.id' | \
-            while read snapshot_id; do
-              if [ ! -z "$snapshot_id" ]; then
-                echo "Deleting old snapshot: $snapshot_id"
-                fly volumes snapshots delete "$snapshot_id" --app trevecca-pedia-wiki --yes || true
+            while read -r snapshot_id; do
+              if [ -n "$snapshot_id" ]; then
+                echo "🗑️ Deleting old snapshot: $snapshot_id"
+                fly volumes snapshots delete "$snapshot_id" \
+                  --app ${{ matrix.app }} --yes || true
               fi
             done
-          echo "Cleanup complete"
+          echo "✅ Cleanup complete"
 
-      - name: Verify wiki snapshots
+      - name: Verify snapshots
         run: |
-          echo "Current wiki snapshots:"
-          fly volumes snapshots list wiki_data --app trevecca-pedia-wiki
-
-  backup-search-volume:
-    name: Backup Search Index Volume
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Create search volume snapshot
-        run: |
-          echo "Creating snapshot for search_index volume..."
-          fly volumes snapshots create search_index \
-            --app trevecca-pedia-search \
-            --yes
-          echo "Snapshot created successfully"
-
-      - name: Cleanup old search snapshots (keep 30)
-        run: |
-          echo "Cleaning up old search snapshots..."
-          # Get snapshot IDs and delete oldest ones, keeping only 30 most recent
-          fly volumes snapshots list search_index --app trevecca-pedia-search --json | \
-            jq -r '.[30:][]?.id' | \
-            while read snapshot_id; do
-              if [ ! -z "$snapshot_id" ]; then
-                echo "Deleting old snapshot: $snapshot_id"
-                fly volumes snapshots delete "$snapshot_id" --app trevecca-pedia-search --yes || true
-              fi
-            done
-          echo "Cleanup complete"
-
-      - name: Verify search snapshots
-        run: |
-          echo "Current search snapshots:"
-          fly volumes snapshots list search_index --app trevecca-pedia-search
+          echo "📋 Current snapshots:"
+          fly volumes snapshots list ${{ steps.get-volume.outputs.volume_id }} --app ${{ matrix.app }}
 
   backup-database:
-    name: Backup Database
+    name: Backup PostgreSQL Database
     runs-on: ubuntu-latest
     steps:
       - name: Install flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Create database backup
+      - name: Create database backup (via SSH — no password secret needed)
+        id: db-backup
         run: |
-          echo "Creating database backup..."
-          fly postgres connect --app trevecca-pedia-db --command "SELECT pg_dump(wiki)" > "/tmp/backup-$(date +%Y%m%d-%H%M%S).sql"
-          echo "Database backup created"
+          echo "🚀 Running pg_dump inside the Postgres VM..."
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BACKUP_FILE="trevecca-pedia-wiki-${TIMESTAMP}.dump"
+
+          fly ssh console -a trevecca-pedia-db --command '
+            pg_dump -U postgres -d wiki \
+              --clean --if-exists --no-owner --no-acl -Fc
+          ' > "$BACKUP_FILE"
+
+          echo "✅ Backup created: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
+          echo "backup_path=$BACKUP_FILE" >> $GITHUB_OUTPUT
+
+      - name: Upload database backup (GitHub Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup
+          path: ${{ steps.db-backup.outputs.backup_path }}
+          retention-days: 30
+          if-no-files-found: error
 
   notify-on-failure:
     name: Notify on Failure
-    needs: [backup-wiki-volume, backup-search-volume, backup-database]
+    needs: [backup-volumes, backup-database]
     if: failure()
     runs-on: ubuntu-latest
     permissions:
@@ -110,8 +116,8 @@ jobs:
           script: |
             const issueTitle = '🚨 Daily Backup Failed';
             const runUrl = context.payload.repository.html_url + '/actions/runs/' + context.runId;
-            const wikiStatus = '${{ needs.backup-wiki-volume.result }}' === 'failure' ? '❌' : '✅';
-            const searchStatus = '${{ needs.backup-search-volume.result }}' === 'failure' ? '❌' : '✅';
+            
+            const volumesStatus = '${{ needs.backup-volumes.result }}' === 'failure' ? '❌' : '✅';
             const dbStatus = '${{ needs.backup-database.result }}' === 'failure' ? '❌' : '✅';
             
             const issueBody = [
@@ -127,20 +133,17 @@ jobs:
               '| Time | ' + new Date().toISOString() + ' |',
               '',
               '### Failed Jobs',
-              '- ' + wikiStatus + ' Wiki volume backup',
-              '- ' + searchStatus + ' Search volume backup',
+              '- ' + volumesStatus + ' Volume backups (Wiki + Search)',
               '- ' + dbStatus + ' Database backup',
               '',
               '### Next Steps',
               '1. [View the failed run](' + runUrl + ')',
               '2. Check the logs for error details',
-              '3. Resolve the issue and re-run the workflow if needed',
               '',
               '---',
               '*This issue was automatically created by the backup workflow.*'
             ].join('\n');
 
-            // Check if an open issue already exists
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -151,7 +154,6 @@ jobs:
             const existingIssue = issues.data.find(issue => issue.title === issueTitle);
 
             if (existingIssue) {
-              // Add comment to existing issue
               const commentBody = 'Backup failed again on ' + new Date().toISOString() + '\n\n[View run](' + runUrl + ')';
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -159,15 +161,12 @@ jobs:
                 issue_number: existingIssue.number,
                 body: commentBody
               });
-              console.log('Commented on existing issue #' + existingIssue.number);
             } else {
-              // Create new issue
-              const newIssue = await github.rest.issues.create({
+              await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: issueTitle,
                 body: issueBody,
                 labels: ['backup-failure', 'automated']
               });
-              console.log('Created issue #' + newIssue.data.number);
             }

@@ -25,18 +25,14 @@ This guide covers deploying the Trevecca Pedia application to fly.io with persis
         │ (trevecca-pedia-│      │ (trevecca-pedia-│──────▶ │    Volume       │
         │      wiki)      │      │     search)     │        │    (/index)     │
         └────────┬────────┘      └─────────────────┘        └─────────────────┘
-                 │                             
-        ┌────────▼────────┐           
-        │   Postgres DB   │          
-        │ (trevecca-pedia-│         
-        │       db)       │        
-        └────────┬────────┘       
                  │
-        ┌────────▼────────┐
-        │   Wiki Files    │
-        │    Volume       │
-        │    (/data)      │
-        └─────────────────┘
+       ┌─────────┴──────────┐
+       ▼                    ▼
+┌──────────────┐   ┌─────────────────┐
+│  Postgres DB │   │  Wiki Files     │
+│(trevecca-    │   │  Volume (/data) │
+│  pedia-db)   │   └─────────────────┘
+└──────────────┘
 ```
 
 **Service Communication:**
@@ -128,7 +124,7 @@ cd api-layer
 fly apps create trevecca-pedia-api
 
 # Set wiki service URL only (external fly.io HTTP address)
-fly secrets set WIKI_SERVICE_URL="http://trevecca-pedia-wiki.fly.dev" --app trevecca-pedia-api
+fly secrets set WIKI_SERVICE_URL="https://trevecca-pedia-wiki.fly.dev" --app trevecca-pedia-api
 
 # Deploy
 fly deploy
@@ -173,7 +169,7 @@ fly deploy
 cd api-layer
 
 # Add search service URL
-fly secrets set SEARCH_SERVICE_URL="http://trevecca-pedia-search.fly.dev" --app trevecca-pedia-api
+fly secrets set SEARCH_SERVICE_URL="https://trevecca-pedia-search.fly.dev" --app trevecca-pedia-api
 
 # Redeploy to pick up the new configuration
 fly deploy

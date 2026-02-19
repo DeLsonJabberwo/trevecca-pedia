@@ -16,7 +16,7 @@ docker compose down --volumes
 
 Make sure to set up environment variable for password:
 ```
-cp ./env.example ./.env
+cp .env.example .env
 source .env
 ```
 

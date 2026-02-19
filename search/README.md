@@ -1,4 +1,4 @@
-# Wiki Service
+# Search Service
 
 ## Usage
 
