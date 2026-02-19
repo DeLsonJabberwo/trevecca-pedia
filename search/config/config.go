@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -15,7 +16,8 @@ func init() {
 		log.Println("Warning: .env file not found, using defaults")
 	}
 
-	WikiURL = GetEnv("API_LAYER_URL", "http://127.0.0.1:2745/v1/wiki")
+	apiURL := GetEnv("API_LAYER_URL", "http://127.0.0.1:2745/v1")
+	WikiURL = fmt.Sprintf("%s/wiki", apiURL)
 	IndexDir = GetEnv("INDEX_DIR", "../index")
 }
 

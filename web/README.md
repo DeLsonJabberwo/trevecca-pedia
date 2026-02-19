@@ -7,6 +7,12 @@ Set up go:
 go get web/cmd
 ```
 
+Make sure to set up environment variables (in `wiki` directory):
+```
+cp .env.example ./.env
+source .env
+```
+
 Install [templ](https://templ.guide/quick-start/installation):
 ```
 go install github.com/a-h/templ/cmd/templ@latest
@@ -21,12 +27,5 @@ air .
 
 This service starts an HTTP server on port `:8080`
 
-*Note: I apologize for the awful web UI. I hate webpage design and CSS, so I made an LLM do my tailwind. Please don't crucify me*
-
-## Pages to try
-
-I think these are the only ones that do anything right now.
-
-- `/pages/dan-boone`
-- `/pages/newsies`
+Try out the site here: [http://localhost:8080/](http://localhost:8080/)
 

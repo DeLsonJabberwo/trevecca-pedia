@@ -31,9 +31,6 @@ primary_region = 'iad'
   WIKI_DB_USER = "wiki_user"
   WIKI_DATA_DIR = "/data"
 
-# Secrets to be set via `fly secrets set`
-# DO NOT commit actual values here
-# Run these commands after first deploy:
-#   fly secrets set WIKI_DB_HOST="your-db-host" --app trevecca-pedia-wiki
-#   fly secrets set WIKI_DB_PORT="5432" --app trevecca-pedia-wiki
-#   fly secrets set WIKI_DB_PASSWORD="your-db-password" --app trevecca-pedia-wiki
+# DATABASE_URL is automatically set when attaching the database:
+#   fly postgres attach --app trevecca-pedia-wiki --postgres-app trevecca-pedia-db
+# Falls back to individual WIKI_DB_* variables if DATABASE_URL is not set

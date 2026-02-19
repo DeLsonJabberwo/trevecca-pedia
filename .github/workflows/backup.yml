@@ -1,0 +1,173 @@
+name: Daily Volume Backup
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual backup'
+        required: false
+        default: 'Manual backup triggered'
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  backup-wiki-volume:
+    name: Backup Wiki Data Volume
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Create wiki volume snapshot
+        run: |
+          echo "Creating snapshot for wiki_data volume..."
+          fly volumes snapshots create wiki_data \
+            --app trevecca-pedia-wiki \
+            --yes
+          echo "Snapshot created successfully"
+
+      - name: Cleanup old wiki snapshots (keep 30)
+        run: |
+          echo "Cleaning up old wiki snapshots..."
+          # Get snapshot IDs and delete oldest ones, keeping only 30 most recent
+          fly volumes snapshots list wiki_data --app trevecca-pedia-wiki --json | \
+            jq -r '.[30:][]?.id' | \
+            while read snapshot_id; do
+              if [ ! -z "$snapshot_id" ]; then
+                echo "Deleting old snapshot: $snapshot_id"
+                fly volumes snapshots delete "$snapshot_id" --app trevecca-pedia-wiki --yes || true
+              fi
+            done
+          echo "Cleanup complete"
+
+      - name: Verify wiki snapshots
+        run: |
+          echo "Current wiki snapshots:"
+          fly volumes snapshots list wiki_data --app trevecca-pedia-wiki
+
+  backup-search-volume:
+    name: Backup Search Index Volume
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Create search volume snapshot
+        run: |
+          echo "Creating snapshot for search_index volume..."
+          fly volumes snapshots create search_index \
+            --app trevecca-pedia-search \
+            --yes
+          echo "Snapshot created successfully"
+
+      - name: Cleanup old search snapshots (keep 30)
+        run: |
+          echo "Cleaning up old search snapshots..."
+          # Get snapshot IDs and delete oldest ones, keeping only 30 most recent
+          fly volumes snapshots list search_index --app trevecca-pedia-search --json | \
+            jq -r '.[30:][]?.id' | \
+            while read snapshot_id; do
+              if [ ! -z "$snapshot_id" ]; then
+                echo "Deleting old snapshot: $snapshot_id"
+                fly volumes snapshots delete "$snapshot_id" --app trevecca-pedia-search --yes || true
+              fi
+            done
+          echo "Cleanup complete"
+
+      - name: Verify search snapshots
+        run: |
+          echo "Current search snapshots:"
+          fly volumes snapshots list search_index --app trevecca-pedia-search
+
+  backup-database:
+    name: Backup Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Create database backup
+        run: |
+          echo "Creating database backup..."
+          fly postgres connect --app trevecca-pedia-db --command "SELECT pg_dump(wiki)" > "/tmp/backup-$(date +%Y%m%d-%H%M%S).sql"
+          echo "Database backup created"
+
+  notify-on-failure:
+    name: Notify on Failure
+    needs: [backup-wiki-volume, backup-search-volume, backup-database]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create GitHub Issue on failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueTitle = '🚨 Daily Backup Failed';
+            const runUrl = context.payload.repository.html_url + '/actions/runs/' + context.runId;
+            const wikiStatus = '${{ needs.backup-wiki-volume.result }}' === 'failure' ? '❌' : '✅';
+            const searchStatus = '${{ needs.backup-search-volume.result }}' === 'failure' ? '❌' : '✅';
+            const dbStatus = '${{ needs.backup-database.result }}' === 'failure' ? '❌' : '✅';
+            
+            const issueBody = [
+              '## Backup Failure Alert',
+              '',
+              'The daily backup workflow failed for **Trevecca Pedia**.',
+              '',
+              '| Detail | Value |',
+              '|--------|-------|',
+              '| Repository | ' + context.repo.owner + '/' + context.repo.repo + ' |',
+              '| Workflow | ' + context.workflow + ' |',
+              '| Run ID | ' + context.runId + ' |',
+              '| Time | ' + new Date().toISOString() + ' |',
+              '',
+              '### Failed Jobs',
+              '- ' + wikiStatus + ' Wiki volume backup',
+              '- ' + searchStatus + ' Search volume backup',
+              '- ' + dbStatus + ' Database backup',
+              '',
+              '### Next Steps',
+              '1. [View the failed run](' + runUrl + ')',
+              '2. Check the logs for error details',
+              '3. Resolve the issue and re-run the workflow if needed',
+              '',
+              '---',
+              '*This issue was automatically created by the backup workflow.*'
+            ].join('\n');
+
+            // Check if an open issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'backup-failure'
+            });
+
+            const existingIssue = issues.data.find(issue => issue.title === issueTitle);
+
+            if (existingIssue) {
+              // Add comment to existing issue
+              const commentBody = 'Backup failed again on ' + new Date().toISOString() + '\n\n[View run](' + runUrl + ')';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: commentBody
+              });
+              console.log('Commented on existing issue #' + existingIssue.number);
+            } else {
+              // Create new issue
+              const newIssue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['backup-failure', 'automated']
+              });
+              console.log('Created issue #' + newIssue.data.number);
+            }
