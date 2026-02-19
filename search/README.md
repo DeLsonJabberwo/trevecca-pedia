@@ -7,6 +7,12 @@ Set up go:
 go get search/cmd
 ```
 
+Make sure to set up environment variables (in `search` directory):
+```
+cp .env.example ./.env
+source .env
+```
+
 Using air in the `search` directory:
 ```
 air .
