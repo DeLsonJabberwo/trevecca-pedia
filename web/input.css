@@ -1,8 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+
 @import "tailwindcss";
 
 @source "./templates/**/*.{templ,html}";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Noto Serif', ui-sans-serif, system-ui, sans-serif;
+    --default-font-family: 'Noto Serif', ui-sans-serif, system-ui, sans-serif;
+}
 
 @layer base {
     #entry h1 {

@@ -6,3 +6,6 @@ static/css/tailwind.css
 .env
 .env.local
 .env.*.local
+
+# Templ generated files
+templates/**/*_templ.go

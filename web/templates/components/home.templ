@@ -28,7 +28,7 @@ templ HeroSection() {
 							type="text" 
 							name="q" 
 							placeholder="Search articles, topics, or people..." 
-							class="w-full pl-14 pr-32 py-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 focus:border-transparent transition-all shadow-sm group-hover:shadow-md"
+							class="w-full pl-14 pr-32 py-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 focus:border-transparent transition-all duration-200 shadow-sm group-hover:shadow-md"
 						/>
 						<button 
 							type="submit" 
@@ -77,9 +77,10 @@ templ PageList(pages []utils.PageInfoPrev) {
 					<h3 class="font-medium text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors">
 						{ page.Name }
 					</h3>
-					<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
-						{ page.Preview }
-					</p>
+					<div class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                        <!-- { page.Preview } -->
+						@templ.Raw(utils.ToMarkdown(page.Preview))
+					</div>
 				</div>
 			</a>
 		}
