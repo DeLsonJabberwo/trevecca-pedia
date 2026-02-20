@@ -77,9 +77,10 @@ templ PageList(pages []utils.PageInfoPrev) {
 					<h3 class="font-medium text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors">
 						{ page.Name }
 					</h3>
-					<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
-						{ page.Preview }
-					</p>
+					<div class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                        <!-- { page.Preview } -->
+						@templ.Raw(utils.ToMarkdown(page.Preview))
+					</div>
 				</div>
 			</a>
 		}
