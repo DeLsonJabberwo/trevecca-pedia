@@ -8,6 +8,7 @@
 
 @theme {
     --font-sans: 'Noto Serif', ui-sans-serif, system-ui, sans-serif;
+    --default-font-family: 'Noto Serif', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
