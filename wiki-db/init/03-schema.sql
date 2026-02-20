@@ -8,7 +8,6 @@ INSERT INTO pages VALUES ('1cbe7062-1e76-401f-98e2-f71ca69a9480', 'nazarene-beli
 INSERT INTO pages VALUES ('60b6b10c-db33-4b4c-9dcf-566f5b3c59a4', 'newsies', 'Newsies', NULL, '2025-11-12', NULL);
 INSERT INTO pages VALUES ('44927247-4240-44c4-91fa-faac2b1d264e', 'offices-services', 'Offices & Services', NULL, NULL, NULL);
 INSERT INTO pages VALUES ('c32b2206-ca5f-407c-b6d0-89b7da1e4c2b', 'spiritual-life', 'Spiritual Life', NULL, NULL, NULL);
-INSERT INTO pages VALUES ('4386193c-c404-46d4-aa98-e6690cc80b3a', 'home', 'Home', NULL, NULL, NULL);
 
 INSERT INTO revisions VALUES ('1978e5ee-8906-4da2-a930-47b394029bae', '1e5430e8-b398-4ed8-986e-71a4ade8228d', '2026-01-26 00:13:59.188244', '1197028');
 INSERT INTO revisions VALUES ('2d4460fe-9cd6-4707-bf78-b2c38f009e29', 'f27287a0-06c0-4b01-8380-fb2ba3a318a8', '2026-01-26 00:13:59.170213', '1197028');

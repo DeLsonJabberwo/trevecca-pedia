@@ -5,26 +5,25 @@ templ Navigation() {
 		<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between h-16">
 				<!-- Logo -->
-				<div class="flex items-center">
+				<div class="flex items-center flex-none w-40">
 					<a href="/" class="flex items-center gap-2 group">
-						<svg class="w-7 h-7 text-neutral-700 dark:text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg class="w-7 h-7 text-neutral-700 dark:text-neutral-300 transition-all duration-200 group-hover:scale-110 group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.9)] dark:group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
 						</svg>
-						<span class="text-xl font-bold text-neutral-800 dark:text-neutral-200">TreveccaPedia</span>
+						<span class="text-xl font-bold text-neutral-800 dark:text-neutral-200 transition-all duration-200 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.7)] dark:group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">TreveccaPedia</span>
 					</a>
 				</div>
 
 				<!-- Navigation Links -->
-				<nav class="hidden md:flex items-center gap-6">
-					<a href="/" class="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium transition-colors">Home</a>
-					<a href="/pages" class="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium transition-colors">Pages</a>
+				<nav class="hidden md:flex flex-1 items-center justify-center gap-6">
+					<a href="/" class="py-4 px-6 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 font-bold transition-colors">Home</a>
 				</nav>
 
 				<!-- Right side: Dark mode toggle -->
-				<div class="flex items-center gap-3">
+				<div class="flex items-center justify-end gap-3 flex-none w-40">
 					<button 
 						onclick="toggleDarkMode()"
-						class="p-2 rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+						class="p-4 rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
 						aria-label="Toggle dark mode"
 					>
 						<svg id="sun-icon" class="hidden dark:block w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

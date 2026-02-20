@@ -31,7 +31,7 @@ func WikiEntryContent(page utils.Page) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"entry\" class=\"prose prose-lg dark:prose-dark max-w-none px-4 sm:px-6 lg:px-8 py-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"entry\" class=\"prose prose-lg dark:prose-dark w-full md:max-w-3xl lg:max-w-4xl xl:max-w-5xl md:ml-24 lg:ml-32 xl:ml-40 px-4 sm:px-6 lg:px-8 py-8 md:border-l-4 md:border-neutral-200 md:dark:border-neutral-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
