@@ -205,8 +205,13 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 		return utils.Revision{}, wikierrors.PageDeleted()
 	}
 	rev.PageId = *revInfo.PageId
-	rev.Name = pageInfo.Name
 	rev.RevDateTime = *revInfo.DateTime
+	rev.Author = *revInfo.Author
+	rev.Slug = revInfo.Slug
+	rev.Name = revInfo.Name
+	rev.ArchiveDate = revInfo.ArchiveDate
+	rev.DeletedAt = revInfo.DeletedAt
+
 
 	rev.Content, err = utils.GetContentAtRevision(ctx, db, dataDir, rev.PageId, rev.UUID)
 	if err != nil {

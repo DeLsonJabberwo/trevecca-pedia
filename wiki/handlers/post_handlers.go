@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"wiki/database"
 	wikierrors "wiki/errors"
 	"wiki/requests"
 	"wiki/utils"
@@ -161,7 +162,7 @@ func NewRevisionHandler(c *gin.Context) {
 		})
 		return
 	}
-	file, err := c.FormFile("new_page")
+	file, err := c.FormFile("new_content")
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": "bad request format",
@@ -187,7 +188,68 @@ func NewRevisionHandler(c *gin.Context) {
 	}
 	revReq.PageId = c.PostForm("page_id")
 	revReq.Author = c.PostForm("author")
-	revReq.NewPage = string(newPageBytes)
+
+	pageId, err := database.GetUUID(ctx, db, revReq.PageId)
+	if err != nil {
+		werr := wikierrors.DatabaseError(err)
+		c.AbortWithStatusJSON(werr.Code, gin.H{
+			"error": werr.Details,
+		})
+		return
+	}
+	pageInfo, err := database.GetPageInfo(ctx, db, pageId)
+	if err != nil {
+		werr := wikierrors.DatabaseError(err)
+		c.AbortWithStatusJSON(werr.Code, gin.H{
+			"error": werr.Details,
+		})
+		return
+	}
+
+	revReq.Slug = c.PostForm("slug")
+	if revReq.Slug == "" {
+		revReq.Slug = pageInfo.Slug
+	}
+	revReq.Name = c.PostForm("name")
+	if revReq.Name == "" {
+		revReq.Name = pageInfo.Name
+	}
+
+	archiveDateStr := c.PostForm("archive_date")
+	if archiveDateStr != "" {
+		archiveDate, err := time.Parse("2006-01-02", archiveDateStr)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "bad request format",
+			})
+			return
+		}
+		revReq.ArchiveDate = &archiveDate
+	} else {
+		revReq.ArchiveDate = pageInfo.ArchiveDate
+	}
+
+	var deletedAt *time.Time
+	err = db.QueryRowContext(ctx, `
+		SELECT deleted_at FROM pages WHERE uuid=$1;
+	`, pageId).Scan(&deletedAt)
+	if err != nil {
+		werr := wikierrors.DatabaseError(err)
+		c.AbortWithStatusJSON(werr.Code, gin.H{
+			"error": werr.Details,
+		})
+		return
+	}
+	if deletedAt != nil {
+		werr := wikierrors.PageDeleted()
+		c.AbortWithStatusJSON(werr.Code, gin.H{
+			"error": werr.Details,
+		})
+		return
+	}
+	revReq.DeletedAt = deletedAt
+
+	revReq.NewContent = string(newPageBytes)
 
 	err = requests.PostRevision(ctx, db, dataDir, revReq)
 	if err != nil {
@@ -203,5 +265,3 @@ func NewRevisionHandler(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
-
-

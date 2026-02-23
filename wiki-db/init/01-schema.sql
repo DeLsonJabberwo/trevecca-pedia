@@ -12,6 +12,10 @@ CREATE TABLE revisions (
     page_id             UUID REFERENCES pages(uuid) ON DELETE CASCADE NOT NULL,
     date_time           TIMESTAMP DEFAULT now() NOT NULL,
     author              TEXT NOT NULL,
+    slug                TEXT NOT NULL,
+    name                TEXT NOT NULL,
+    archive_date        DATE,
+    deleted_at          TIMESTAMP,
     CONSTRAINT uq_page_timestamp UNIQUE (page_id, date_time)
 );
 
@@ -48,10 +52,3 @@ CREATE TABLE page_categories (
     PRIMARY KEY (page_id, category)
 );
 
-CREATE TABLE metadata_logs (
-    rev_id          UUID REFERENCES revisions(uuid) ON DELETE CASCADE PRIMARY KEY,
-    slug            TEXT NOT NULL,
-    name            TEXT NOT NULL,
-    archive_date    DATE,
-    deleted_at      TIMESTAMP
-);
