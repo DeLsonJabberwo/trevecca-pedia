@@ -1,88 +1,86 @@
-# Trevecca-Pedia Authentication Service
+# Authentication Service
 
-MVP authentication service that issues JWTs and supports role-based access control.
+JWT-based authentication service with role-based access control for Trevecca-Pedia.
 
-## Features
+## Prerequisites (Nothing new here, just a reminder)
 
-- ✅ JWT-based authentication (HS256)
-- ✅ Role-based access control (RBAC)
-- ✅ Bcrypt password hashing
-- ✅ PostgreSQL persistence
-- ✅ Development seed user
-- ✅ CORS support
-- ✅ Health check endpoint
-
-## Quick Start
-
-### Prerequisites
-
-- Go 1.22+
-- PostgreSQL 12+
-- Docker (optional)
-
-### Local Development
-
-1. **Copy environment variables**
+- **Go 1.25+** — install via Homebrew: `brew install go`
+- **Docker** — install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- **air** (hot reload) — install after Go is set up:
 
 ```bash
-cp .env.example .env
+go install github.com/air-verse/air@latest
 ```
 
-Edit `.env` with your configuration.
-
-2. **Set up database**
-
-Create a PostgreSQL database and user:
-
-```sql
-CREATE DATABASE auth;
-CREATE USER auth_user WITH PASSWORD 'auth_pass';
-GRANT ALL PRIVILEGES ON DATABASE auth TO auth_user;
-```
-
-3. **Run migrations**
+Then make sure Go's bin directory is in your PATH (add this to your `~/.zshrc` or `~/.bashrc`):
 
 ```bash
-psql -U auth_user -d auth -f migrations/0001_init.sql
+export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
-Or connect to the database and run the migration manually.
+Reload your shell after: `source ~/.zshrc`
 
-4. **Install dependencies**
+## Setup & Running
+
+### 1. Clone the Repo
+
+```bash
+git clone <repo-url>
+cd trevecca-pedia/auth
+```
+
+### 2. Install Dependencies
+
+From the `auth` directory:
 
 ```bash
 go mod download
 ```
 
-5. **Run the service**
+### 3. Start the Database
+
+From the `auth` directory, start just the auth database using the local compose file:
 
 ```bash
-# Source env vars
-export $(cat .env | xargs)
-
-# Run
-go run cmd/auth/main.go
+docker compose up -d auth-db
 ```
 
-The service will start on port 8083 (or your configured PORT).
-
-### Using Docker
-
-1. **Build the image**
+This starts `auth-db` (PostgreSQL) on port `5433` with no extra configuration needed. Wait for it to be healthy:
 
 ```bash
-docker build -t trevecca-pedia-auth .
+docker compose ps
 ```
 
-2. **Run the container**
+### 4. Run the Auth Service
+
+From the `auth` directory, run with air (hot reload):
 
 ```bash
-docker run -p 8083:8083 \
-  -e DATABASE_URL="postgres://auth_user:auth_pass@host.docker.internal:5432/auth?sslmode=disable" \
-  -e JWT_SECRET="your-secret-key" \
-  -e DEV_SEED=true \
-  trevecca-pedia-auth
+PORT=8083 \
+DATABASE_URL="postgres://auth_user:authpass@localhost:5433/auth?sslmode=disable" \
+JWT_SECRET="dev-secret-key-change-in-production-please" \
+JWT_EXP_HOURS=24 \
+CORS_ORIGINS="http://localhost:3000,http://localhost:5173,http://localhost:8080" \
+DEV_SEED=true \
+air .
 ```
+
+The service starts on port `8083`. With `DEV_SEED=true` it automatically creates a dev user on startup:
+
+- **Email:** `dev@trevecca.edu`
+- **Password:** `devpass`
+- **Role:** `contributor`
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PORT` | No | `8083` | HTTP server port |
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | — | Secret key for signing JWTs |
+| `JWT_EXP_HOURS` | No | `24` | Token expiration in hours |
+| `CORS_ORIGINS` | No | `localhost:3000,5173,8080` | Comma-separated allowed origins |
+| `DEV_SEED` | No | `false` | Create dev user on startup (dev only) |
 
 ## API Endpoints
 
@@ -92,11 +90,8 @@ docker run -p 8083:8083 \
 GET /healthz
 ```
 
-Response:
 ```json
-{
-  "status": "ok"
-}
+{ "status": "ok" }
 ```
 
 ### Register
@@ -105,31 +100,20 @@ Response:
 POST /auth/register
 Content-Type: application/json
 
-{
-  "email": "student@trevecca.edu",
-  "password": "mypassword123"
-}
+{ "email": "student@trevecca.edu", "password": "mypassword123" }
 ```
 
-**Requirements:**
-- Email must end with `@trevecca.edu`
+- Email must be `@trevecca.edu`
 - Password must be at least 8 characters
+- New users are assigned the `contributor` role automatically
 
-Success Response (201):
+**201 Created:**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "email": "student@trevecca.edu",
-    "roles": ["contributor"]
-  }
+  "accessToken": "eyJhbGci...",
+  "user": { "id": "uuid", "email": "student@trevecca.edu", "roles": ["contributor"] }
 }
 ```
-
-Error Responses:
-- `400 Bad Request`: Invalid email domain or password too short
-- `409 Conflict`: User with this email already exists
 
 ### Login
 
@@ -137,28 +121,14 @@ Error Responses:
 POST /auth/login
 Content-Type: application/json
 
-{
-  "email": "dev@trevecca.edu",
-  "password": "devpass"
-}
+{ "email": "dev@trevecca.edu", "password": "devpass" }
 ```
 
-Success Response (200):
+**200 OK:**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "email": "dev@trevecca.edu",
-    "roles": ["reader", "contributor"]
-  }
-}
-```
-
-Error Response (401):
-```json
-{
-  "error": "invalid credentials"
+  "accessToken": "eyJhbGci...",
+  "user": { "id": "uuid", "email": "dev@trevecca.edu", "roles": ["contributor"] }
 }
 ```
 
@@ -169,103 +139,35 @@ GET /auth/me
 Authorization: Bearer <token>
 ```
 
-Success Response (200):
+**200 OK:**
 ```json
-{
-  "id": "123e4567-e89b-12d3-a456-426614174000",
-  "email": "dev@trevecca.edu",
-  "roles": ["reader", "contributor"]
-}
-```
-
-Error Response (401):
-```json
-{
-  "error": "unauthorized"
-}
+{ "id": "uuid", "email": "dev@trevecca.edu", "roles": ["contributor"] }
 ```
 
 ## JWT Contract
 
-The service issues JWT tokens with the following structure:
+Tokens are signed with **HS256** and contain:
 
-**Algorithm:** HS256
+| Claim | Value |
+|-------|-------|
+| `sub` | User UUID |
+| `email` | User email |
+| `roles` | Array of role names |
+| `iss` | `trevecca-pedia-auth` |
+| `aud` | `trevecca-pedia` |
+| `exp` | Now + `JWT_EXP_HOURS` |
 
-**Claims:**
-- `sub` (string): User ID (UUID)
-- `email` (string): User email
-- `roles` (array): User roles
-- `iss` (string): "trevecca-pedia-auth"
-- `aud` (string): "trevecca-pedia"
-- `iat` (number): Issued at timestamp
-- `exp` (number): Expiration timestamp (default 24h from issue)
-
-Example decoded JWT:
-```json
-{
-  "sub": "123e4567-e89b-12d3-a456-426614174000",
-  "email": "dev@trevecca.edu",
-  "roles": ["reader", "contributor"],
-  "iss": "trevecca-pedia-auth",
-  "aud": "trevecca-pedia",
-  "iat": 1640000000,
-  "exp": 1640086400
-}
-```
+The `JWT_SECRET` must be shared with any other service that validates tokens locally (e.g. the API layer).
 
 ## User Roles
 
 | Role | Description |
 |------|-------------|
-| `reader` | Can browse and view wiki pages |
+| `reader` | Can view wiki pages |
 | `contributor` | Can create and edit wiki pages |
-| `admin` | Elevated permissions (future use) |
-
-## Configuration
-
-All configuration is done via environment variables:
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | `8083` | Server port |
-| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | - | Secret key for signing JWTs |
-| `JWT_EXP_HOURS` | No | `24` | JWT expiration in hours |
-| `CORS_ORIGINS` | No | `http://localhost:3000,http://localhost:5173` | Comma-separated allowed origins |
-| `DEV_SEED` | No | `false` | Create dev user on startup |
-
-## Development User
-
-When `DEV_SEED=true`, the service creates a development user on startup:
-
-- **Email:** `dev@trevecca.edu`
-- **Password:** `devpass`
-- **Roles:** `contributor`
-
-⚠️ **Warning:** Only enable DEV_SEED in development environments!
-
-## Database Schema
-
-### Tables
-
-**users**
-- `id` (UUID, PK): User ID
-- `email` (TEXT, UNIQUE): User email
-- `password_hash` (TEXT): Bcrypt password hash
-- `created_at` (TIMESTAMPTZ): Creation timestamp
-
-**roles**
-- `id` (SERIAL, PK): Role ID
-- `name` (TEXT, UNIQUE): Role name
-
-**user_roles**
-- `user_id` (UUID, FK → users): User ID
-- `role_id` (INT, FK → roles): Role ID
-- Primary key: (user_id, role_id)
+| `admin` | Reserved for future use |
 
 ## Testing
-
-### Manual Testing
 
 ```bash
 # Health check
@@ -281,84 +183,26 @@ curl http://localhost:8083/auth/me \
   -H "Authorization: Bearer TOKEN"
 ```
 
-### Unit Tests
-
-Run tests with:
+Or run the automated smoke test script:
 
 ```bash
-go test ./...
+./test-auth.sh
 ```
 
-## Integration with Other Services
+## Troubleshooting
 
-### API Layer
+**Database connection fails**
+- Check the container is running: `docker compose ps` (from `auth/`)
+- Check port 5433 is not in use: `lsof -i :5433`
 
-The API layer should validate tokens by:
+**Port 8083 already in use**
+- Change `PORT` in the run command or check what's using it: `lsof -i :8083`
 
-1. Extracting the token from `Authorization: Bearer <token>`
-2. Sending a request to `GET /auth/me` with the token
-3. Using the returned user info and roles for authorization
+**Invalid token errors in other services**
+- Ensure `JWT_SECRET` is identical in the auth service and the API layer
+- Check the token hasn't expired (default 24h)
+- Verify format is `Authorization: Bearer <token>`
 
-Alternatively, the API layer can validate tokens locally using the same JWT secret and validation logic.
-
-### Wiki Service
-
-The wiki service should enforce authorization based on roles:
-
-- **Reader role**: Can view pages
-- **Contributor role**: Can create/edit pages
-- **Admin role**: Full access (future)
-
-## Error Handling
-
-All errors return JSON responses with appropriate HTTP status codes:
-
-- `400 Bad Request`: Invalid request format
-- `401 Unauthorized`: Invalid credentials or token
-- `500 Internal Server Error`: Server error
-
-Example error response:
-```json
-{
-  "error": "error description"
-}
-```
-
-## Security Notes
-
-- Passwords are hashed using bcrypt (cost factor 12)
-- JWT tokens expire after configured hours (default 24h)
-- CORS is configured to only allow specified origins
-- Database connections use connection pooling
-- No sensitive data is logged
-
-## Architecture
-
-```
-auth/
-├── cmd/auth/          # Application entrypoint
-├── internal/
-│   ├── auth/          # JWT and password handling
-│   ├── config/        # Configuration loading
-│   ├── http/          # HTTP handlers and routing
-│   └── store/         # Database operations
-├── migrations/        # SQL migrations
-├── Dockerfile         # Container build
-├── go.mod            # Go dependencies
-└── README.md         # This file
-```
-
-## Future Enhancements (Post-MVP)
-
-- Microsoft SSO integration
-- Password recovery flows
-- User self-registration
-- Refresh tokens
-- Token revocation
-- Rate limiting
-- Audit logging
-- More comprehensive tests
-
-## License
-
-Part of the Trevecca-Pedia project.
+**Dev user not created**
+- Confirm `DEV_SEED=true` is set
+- Check the service logs for errors on startup
