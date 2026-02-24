@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -134,6 +133,12 @@ func DeletePageHandler(c *gin.Context) {
 	}
 
 	delReq.Slug = c.PostForm("slug")
+	if delReq.Slug == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "slug is required",
+		})
+		return
+	}
 	delReq.User = c.PostForm("user")
 
 	err = requests.DeletePage(ctx, db, dataDir, delReq)
@@ -153,11 +158,9 @@ func DeletePageHandler(c *gin.Context) {
 }
 
 func NewRevisionHandler(c *gin.Context) {
-	fmt.Printf("[NewRevisionHandler] Starting request\n")
 	ctx := context.Background()
 	db, err := utils.GetDatabase()
 	if err != nil {
-		fmt.Printf("[NewRevisionHandler] Database connection failed: %v\n", err)
 		werr, is := wikierrors.AsWikiError(err)
 		if !is {
 			werr = wikierrors.InternalError(err)
@@ -169,18 +172,15 @@ func NewRevisionHandler(c *gin.Context) {
 	}
 	defer db.Close()
 	dataDir := utils.GetDataDir()
-	fmt.Printf("[NewRevisionHandler] dataDir: %s\n", dataDir)
 
 	var revReq utils.RevisionRequest
 	err = c.Request.ParseMultipartForm(32 << 20)
 	if err != nil {
-		fmt.Printf("[NewRevisionHandler] ParseMultipartForm failed: %v\n", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": "bad request format",
 		})
 		return
 	}
-	fmt.Printf("[NewRevisionHandler] Parsed multipart form\n")
 	file, err := c.FormFile("new_content")
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -206,29 +206,30 @@ func NewRevisionHandler(c *gin.Context) {
 		return
 	}
 	revReq.PageId = c.PostForm("page_id")
+	if revReq.PageId == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "page_id is required",
+		})
+		return
+	}
 	revReq.Author = c.PostForm("author")
-	fmt.Printf("[NewRevisionHandler] page_id: %s, author: %s\n", revReq.PageId, revReq.Author)
 
 	pageId, err := database.GetUUID(ctx, db, revReq.PageId)
 	if err != nil {
-		fmt.Printf("[NewRevisionHandler] GetUUID failed: %v\n", err)
 		werr := wikierrors.DatabaseError(err)
 		c.AbortWithStatusJSON(werr.Code, gin.H{
 			"error": werr.Details,
 		})
 		return
 	}
-	fmt.Printf("[NewRevisionHandler] Got page UUID: %s\n", pageId)
 	pageInfo, err := database.GetPageInfo(ctx, db, pageId)
 	if err != nil {
-		fmt.Printf("[NewRevisionHandler] GetPageInfo failed: %v\n", err)
 		werr := wikierrors.DatabaseError(err)
 		c.AbortWithStatusJSON(werr.Code, gin.H{
 			"error": werr.Details,
 		})
 		return
 	}
-	fmt.Printf("[NewRevisionHandler] Got page info - slug: %s, name: %s\n", pageInfo.Slug, pageInfo.Name)
 
 	revReq.Slug = c.PostForm("slug")
 	if revReq.Slug == "" {
@@ -238,7 +239,6 @@ func NewRevisionHandler(c *gin.Context) {
 	if revReq.Name == "" {
 		revReq.Name = pageInfo.Name
 	}
-	fmt.Printf("[NewRevisionHandler] Request slug: %s, name: %s\n", revReq.Slug, revReq.Name)
 
 	archiveDateStr := c.PostForm("archive_date")
 	if archiveDateStr != "" {
@@ -276,10 +276,8 @@ func NewRevisionHandler(c *gin.Context) {
 
 	revReq.NewContent = string(newPageBytes)
 
-	fmt.Printf("[NewRevisionHandler] Calling PostRevision\n")
 	err = requests.PostRevision(ctx, db, dataDir, revReq)
 	if err != nil {
-		fmt.Printf("[NewRevisionHandler] PostRevision failed: %v\n", err)
 		werr, is := wikierrors.AsWikiError(err)
 		if !is {
 			werr = wikierrors.InternalError(err)
@@ -290,6 +288,5 @@ func NewRevisionHandler(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("[NewRevisionHandler] Success\n")
 	c.Status(http.StatusOK)
 }
