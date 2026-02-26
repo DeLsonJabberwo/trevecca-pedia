@@ -35,4 +35,7 @@
         border: 1px solid;
         padding: 10px;
     }
+    #entry a {
+        text-decoration: underline;
+    }
 }

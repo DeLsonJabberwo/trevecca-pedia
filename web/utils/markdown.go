@@ -8,7 +8,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-func ToMarkdown(content string) (string, error) {
+func ToHTML(content string) (string, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(extension.Table),
 		goldmark.WithRendererOptions(
