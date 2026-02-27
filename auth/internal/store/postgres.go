@@ -145,3 +145,47 @@ func (s *Store) AddUserRole(ctx context.Context, userID uuid.UUID, roleID int) e
 	}
 	return nil
 }
+
+// RegisterUser atomically creates a user and assigns the named role in one transaction.
+// If any step fails, the entire operation is rolled back — no orphan users are left
+// without a role.
+func (s *Store) RegisterUser(ctx context.Context, email, passwordHash, roleName string) (*User, []string, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback() // no-op if Commit() succeeds
+
+	// Create user
+	var user User
+	err = tx.QueryRowContext(ctx, queryCreateUser, email, passwordHash).Scan(
+		&user.ID,
+		&user.Email,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create user: %w", err)
+	}
+
+	// Get role by name
+	var role Role
+	err = tx.QueryRowContext(ctx, queryGetRoleByName, roleName).Scan(&role.ID, &role.Name)
+	if err == sql.ErrNoRows {
+		return nil, nil, fmt.Errorf("role not found: %s", roleName)
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("get role: %w", err)
+	}
+
+	// Assign role to user
+	_, err = tx.ExecContext(ctx, queryAddUserRole, user.ID, role.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("add user role: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return &user, []string{role.Name}, nil
+}
