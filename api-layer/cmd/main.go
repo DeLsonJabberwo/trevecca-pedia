@@ -12,6 +12,9 @@ import (
 )
 
 func main() {
+	// Validate required secrets at startup — fail fast before accepting traffic
+	_ = config.GetJWTSecret()
+
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 	gin.SetMode(gin.DebugMode)

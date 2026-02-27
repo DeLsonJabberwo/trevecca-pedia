@@ -31,7 +31,7 @@ func GetEnv(key, defaultValue string) string {
 func GetJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "your-super-secret-jwt-key-change-this-in-production"
+		panic("JWT_SECRET environment variable is required but not set")
 	}
 	return secret
 }
