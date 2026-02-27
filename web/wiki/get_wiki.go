@@ -35,9 +35,10 @@ func GetPage(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Couldn't parse json from API layer: %w\n", err))
 	}
 
-	entryContent := wikipages.WikiEntryContent(page)
-	component := components.Page(page.Name, entryContent)
-	component.Render(context.Background(), c.Writer)
+	saved := c.Query("saved") == "true"
+entryContent := wikipages.WikiEntryContent(page, saved)
+component := components.Page(page.Name, entryContent)
+component.Render(context.Background(), c.Writer)
 
 }
 
@@ -76,3 +77,29 @@ func getPages() ([]utils.PageInfoPrev, error) {
 	return pages, nil
 }
 
+func GetEditPage(c *gin.Context) {
+	id := c.Param("id")
+	resp, err := http.Get(fmt.Sprintf("%s/pages/%s", config.WikiURL, id))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("couldn't read http response: %w", err))
+		return
+	}
+
+	var page utils.Page
+	err = json.Unmarshal(body, &page)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("couldn't parse json from API layer: %w", err))
+		return
+	}
+
+	editContent := wikipages.WikiEditContent(page ,"")
+	component := components.Page("Editing: "+page.Name, editContent)
+	component.Render(context.Background(), c.Writer)
+}

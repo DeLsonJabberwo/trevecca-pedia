@@ -41,6 +41,8 @@ func main() {
 
 	r.POST("/pages/:id/revisions", handlers.NewRevisionHandler)
 
+	r.POST("/pages/:id/edit", handlers.EditPageHandler)
+
 	// Use port from environment variable, default to 9454
 	port := os.Getenv("WIKI_SERVICE_PORT")
 	if port == "" {

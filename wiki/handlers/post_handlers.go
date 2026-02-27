@@ -10,6 +10,7 @@ import (
 	"wiki/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func NewPageHandler(c *gin.Context) {
@@ -64,7 +65,6 @@ func NewPageHandler(c *gin.Context) {
 	newPageReq.Name = c.PostForm("name")
 	newPageReq.Author = c.PostForm("author")
 
-	// Handle optional archive_date
 	archiveDateStr := c.PostForm("archive_date")
 	if archiveDateStr != "" {
 		archiveDate, err := time.Parse("2006-01-02", archiveDateStr)
@@ -134,7 +134,6 @@ func DeletePageHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
-
 }
 
 func NewRevisionHandler(c *gin.Context) {
@@ -204,4 +203,52 @@ func NewRevisionHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func EditPageHandler(c *gin.Context) {
+	ctx := context.Background()
+	db, err := utils.GetDatabase()
+	if err != nil {
+		werr, is := wikierrors.AsWikiError(err)
+		if !is {
+			werr = wikierrors.InternalError(err)
+		}
+		c.AbortWithStatusJSON(werr.Code, gin.H{"error": werr.Details})
+		return
+	}
+	defer db.Close()
+	dataDir := utils.GetDataDir()
+
+	pageId := c.Param("id")
+	if _, err := uuid.Parse(pageId); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "invalid page id",
+		})
+		return
+	}
+
+	content := c.PostForm("content")
+	if content == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "content cannot be empty",
+		})
+		return
+	}
+
+	revReq := utils.RevisionRequest{
+		PageId:  pageId,
+		Author:  c.PostForm("author"),
+		NewPage: content,
+	}
+
+	err = requests.PostRevision(ctx, db, dataDir, revReq)
+	if err != nil {
+		werr, is := wikierrors.AsWikiError(err)
+		if !is {
+			werr = wikierrors.InternalError(err)
+		}
+		c.AbortWithStatusJSON(werr.Code, gin.H{"error": werr.Details})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
 

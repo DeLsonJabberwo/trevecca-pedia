@@ -26,6 +26,8 @@ func main() {
 
 	r.GET("/v1/search/search", search.SearchRequest)
 
+	r.POST("/v1/wiki/pages/:id/edit", wiki.PostEditPage)
+
 	port := config.GetEnv("API_LAYER_PORT", "2745")
 	r.Run(fmt.Sprintf(":%s", port))
 }

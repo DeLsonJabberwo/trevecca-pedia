@@ -18,6 +18,9 @@ func main() {
 	r.GET("/pages/:id", wiki.GetPage)
 	r.GET("/search", search.GetSearchPage)
 
+	r.GET("/pages/:id/edit", wiki.GetEditPage)   
+	r.POST("/pages/:id/edit", wiki.PostEditPage) 
+
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")
 	r.Run(":" + port)
 }
