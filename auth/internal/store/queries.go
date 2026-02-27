@@ -34,8 +34,14 @@ const (
 	`
 
 	queryAddUserRole = `
-		INSERT INTO user_roles (user_id, role_id) 
+		INSERT INTO user_roles (user_id, role_id)
 		VALUES ($1, $2)
 		ON CONFLICT DO NOTHING
+	`
+
+	queryIsEmailWhitelisted = `
+		SELECT EXISTS (
+			SELECT 1 FROM allowed_emails WHERE email = $1
+		)
 	`
 )

@@ -39,10 +39,11 @@ go mod download
 
 ### 3. Start the Database
 
-From the `auth` directory, start just the auth database using the local compose file:
+From the `auth-db` directory, start the auth database:
 
 ```bash
-docker compose up -d auth-db
+cd ../auth-db
+docker compose up -d
 ```
 
 This starts `auth-db` (PostgreSQL) on port `5433` with no extra configuration needed. Wait for it to be healthy:
@@ -51,9 +52,27 @@ This starts `auth-db` (PostgreSQL) on port `5433` with no extra configuration ne
 docker compose ps
 ```
 
+Then go back to the `auth` directory:
+
+```bash
+cd ../auth
+```
+
 ### 4. Run the Auth Service
 
-From the `auth` directory, run with air (hot reload):
+The easiest way is to create a `.env` file in the `auth` directory so you don't have to type the variables every time. Copy the example:
+
+```bash
+cp .env.example .env
+```
+
+The example has the right values for local development. If you want the dev user (`dev@trevecca.edu / devpass`) seeded on startup, set `DEV_SEED=true` in your `.env`. Then run:
+
+```bash
+air .
+```
+
+**Alternative** — if you prefer not to use a `.env` file, you can pass the variables inline:
 
 ```bash
 PORT=8083 \
@@ -84,6 +103,7 @@ The service starts on port `8083`. With `DEV_SEED=true` it automatically creates
 
 ## API Endpoints
 
+> **Note:** In the full stack, the frontend does not call the auth service directly. Requests flow through the web service → API layer → auth service. The endpoints below are the auth service's own routes, useful for testing it in isolation.
 ### Health Check
 
 ```
@@ -104,6 +124,7 @@ Content-Type: application/json
 ```
 
 - Email must be `@trevecca.edu`
+- Email must be in the `allowed_emails` whitelist
 - Password must be at least 8 characters
 - New users are assigned the `contributor` role automatically
 
@@ -158,6 +179,36 @@ Tokens are signed with **HS256** and contain:
 | `exp` | Now + `JWT_EXP_HOURS` |
 
 The `JWT_SECRET` must be shared with any other service that validates tokens locally (e.g. the API layer).
+
+## Granting Access (Email Whitelist)
+
+Registration is restricted to emails that have been manually approved. Users whose email is not in the whitelist will get a `403 Forbidden` error when trying to register.
+
+To grant someone access, connect to the auth database and run:
+
+```sql
+INSERT INTO allowed_emails (email) VALUES ('student@trevecca.edu');
+```
+
+To connect to the database:
+
+```bash
+docker exec -it trevecca-auth-db psql -U auth_user -d auth
+```
+
+To see who is currently whitelisted:
+
+```sql
+SELECT * FROM allowed_emails;
+```
+
+To revoke access (only works if the user hasn't registered yet):
+
+```sql
+DELETE FROM allowed_emails WHERE email = 'student@trevecca.edu';
+```
+
+> **Note:** The `dev@trevecca.edu` dev user is created directly by `DEV_SEED` and does not need to be in the whitelist.
 
 ## User Roles
 

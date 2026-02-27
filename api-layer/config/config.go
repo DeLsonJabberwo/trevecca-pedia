@@ -8,11 +8,13 @@ import (
 
 var WikiServiceURL string
 var SearchServiceURL string
+var AuthServiceURL string
 
 func init() {
 	godotenv.Load()
 	WikiServiceURL = GetEnv("WIKI_SERVICE_URL", "http://127.0.0.1:9454")
 	SearchServiceURL = GetEnv("SEARCH_SERVICE_URL", "http://127.0.0.1:7724")
+	AuthServiceURL = GetEnv("AUTH_SERVICE_URL", "http://127.0.0.1:8083")
 }
 
 func GetEnv(key, defaultValue string) string {

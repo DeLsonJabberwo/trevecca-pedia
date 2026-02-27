@@ -21,6 +21,11 @@ func main() {
 	r.GET("/login", auth.GetLoginPage)
 	r.GET("/profile", auth.GetProfilePage)
 
+	// Auth API proxy routes - browser calls these, web service forwards to API layer
+	r.POST("/auth/login", auth.PostLogin)
+	r.POST("/auth/register", auth.PostRegister)
+	r.GET("/auth/me", auth.GetMe)
+
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")
 	r.Run(":" + port)
 }

@@ -110,6 +110,19 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 		return
 	}
 
+	// Check email whitelist
+	whitelisted, err := h.store.IsEmailWhitelisted(c.Request.Context(), req.Email)
+	if err != nil {
+		log.Printf("Error checking whitelist for %s: %v", req.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+	if !whitelisted {
+		log.Printf("Registration blocked for non-whitelisted email: %s", req.Email)
+		c.JSON(http.StatusForbidden, gin.H{"error": "this email is not authorized to register"})
+		return
+	}
+
 	// Check if user already exists
 	existingUser, _ := h.store.GetUserByEmail(c.Request.Context(), req.Email)
 	if existingUser != nil {

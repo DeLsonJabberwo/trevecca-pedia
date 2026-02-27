@@ -1,7 +1,5 @@
 package components
 
-import "web/config"
-
 templ Page(title string, children ...templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en" class="scroll-smooth">
@@ -21,7 +19,6 @@ templ Page(title string, children ...templ.Component) {
 		</head>
 		<body
 			class="min-h-screen flex flex-col bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-colors duration-300"
-			data-auth-url={ config.AuthURL }
 		>
 			@Navigation()
 			<main class="flex-1">

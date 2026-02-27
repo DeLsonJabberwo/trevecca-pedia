@@ -1,9 +1,5 @@
 // Auth utilities for TreveccaPedia
 
-function getAuthURL() {
-    return document.body.getAttribute('data-auth-url') || 'http://127.0.0.1:8083'
-}
-
 function getToken() {
     return localStorage.getItem('auth_token')
 }
@@ -32,7 +28,7 @@ function clearAuth() {
 async function login(email, password) {
     var resp
     try {
-        resp = await fetch(getAuthURL() + '/auth/login', {
+        resp = await fetch('/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -56,7 +52,7 @@ async function login(email, password) {
 async function register(email, password) {
     var resp
     try {
-        resp = await fetch(getAuthURL() + '/auth/register', {
+        resp = await fetch('/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -89,7 +85,7 @@ async function fetchProfile() {
         return
     }
     try {
-        const resp = await fetch(getAuthURL() + '/auth/me', {
+        const resp = await fetch('/auth/me', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         if (!resp.ok) {

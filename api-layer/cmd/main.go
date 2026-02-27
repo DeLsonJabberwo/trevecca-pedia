@@ -2,6 +2,7 @@ package main
 
 import (
 	"api-layer/config"
+	authHandlers "api-layer/handlers/auth"
 	"api-layer/handlers/search"
 	"api-layer/handlers/wiki"
 	"api-layer/middleware"
@@ -32,6 +33,11 @@ func main() {
 	}
 
 	r.GET("/v1/search/search", search.SearchRequest)
+
+	// Auth endpoints - proxied to auth service
+	r.POST("/v1/auth/login", authHandlers.PostLogin)
+	r.POST("/v1/auth/register", authHandlers.PostRegister)
+	r.GET("/v1/auth/me", authHandlers.GetMe)
 
 	port := config.GetEnv("API_LAYER_PORT", "2745")
 	r.Run(fmt.Sprintf(":%s", port))

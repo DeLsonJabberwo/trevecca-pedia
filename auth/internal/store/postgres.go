@@ -127,6 +127,16 @@ func (s *Store) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	return &role, nil
 }
 
+// IsEmailWhitelisted checks if an email is in the allowed_emails table
+func (s *Store) IsEmailWhitelisted(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRowContext(ctx, queryIsEmailWhitelisted, email).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("database error: %w", err)
+	}
+	return exists, nil
+}
+
 // AddUserRole adds a role to a user
 func (s *Store) AddUserRole(ctx context.Context, userID uuid.UUID, roleID int) error {
 	_, err := s.db.ExecContext(ctx, queryAddUserRole, userID, roleID)
