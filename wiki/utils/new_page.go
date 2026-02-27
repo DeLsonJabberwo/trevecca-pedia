@@ -34,10 +34,10 @@ func CreateNewPage(ctx context.Context, db *sql.DB, dataDir string, req NewPageR
 	// create revision db entry
 	var revId uuid.UUID
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO revisions (page_id, author)
-		VALUES ($1, $2)
+		INSERT INTO revisions (page_id, author, slug, name, archive_date)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING uuid;
-	`, pageId, req.Author).Scan(&revId)
+	`, pageId, req.Author, req.Slug, req.Name, req.ArchiveDate).Scan(&revId)
 	if err != nil {
 		return err
 	}
@@ -54,9 +54,9 @@ func CreateNewPage(ctx context.Context, db *sql.DB, dataDir string, req NewPageR
 	}
 
 	// FILE STUFF
-	pagePath := filepath.Join(dataDir, "pages", fmt.Sprintf("%s.md", pageId))
-	revPath := filepath.Join(dataDir, "revisions", fmt.Sprintf("%s.txt", revId))
-	snapPath := filepath.Join(dataDir, "snapshots", fmt.Sprintf("%s.md", snapId))
+	pagePath := filepath.Join(dataDir, "pages", fmt.Sprintf("%s.md", req.Slug))
+	revPath := filepath.Join(dataDir, "revisions", fmt.Sprintf("%s_%s.txt", req.Slug, revId))
+	snapPath := filepath.Join(dataDir, "snapshots", fmt.Sprintf("%s_%s.md", req.Slug, snapId))
 
 	err = os.MkdirAll(filepath.Join(dataDir, "pages"), 0755)
 	if err != nil {

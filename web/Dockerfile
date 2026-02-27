@@ -1,40 +1,58 @@
-# Build stage for CSS
-FROM node:20-alpine AS css-builder
+# Stage 1: Generate templates (needs Go + templ)
+FROM golang:1.25-alpine AS templ-generator
 
 WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy CSS source AND templates for Tailwind scanning
-COPY input.css ./
-COPY templates ./templates/
-
-# Build Tailwind CSS
-RUN npx tailwindcss -i ./input.css -o ./static/css/tailwind.css --minify
-
-# Build stage for Go
-FROM golang:1.25-alpine AS go-builder
 
 # Install build dependencies
 RUN apk add --no-cache git
 
-WORKDIR /app
+# Install templ
+RUN go install github.com/a-h/templ/cmd/templ@latest
 
-# Copy source code first (needed for go mod tidy to work properly)
+# Copy source code
 COPY . .
 
-# Generate go.sum and download dependencies
+# Generate the templates
+RUN templ generate
+
+# Stage 2: Build CSS (needs Node.js, uses generated templates for scanning)
+FROM node:20-alpine AS css-builder
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy CSS source and generated templates
+COPY input.css ./
+COPY --from=templ-generator /app/templates ./templates
+
+# Build Tailwind CSS (scans templates for class names)
+RUN npx tailwindcss -i ./input.css -o ./static/css/tailwind.css --minify
+
+# Stage 3: Build Go binary
+FROM golang:1.25-alpine AS go-builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Copy source code first (needed for go mod tidy to see imports)
+COPY . .
+COPY --from=templ-generator /app/templates ./templates
+
+# Run go mod tidy to generate go.sum based on actual imports
 RUN go mod tidy
+
+# Download dependencies
 RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o tmp/web-service ./cmd/main.go
 
-# Runtime stage
+# Stage 4: Runtime
 FROM alpine:latest
 
 # Install ca-certificates for HTTPS
@@ -54,7 +72,7 @@ COPY --from=css-builder /app/static/css/tailwind.css ./static/css/
 COPY --from=go-builder /app/static/js ./static/js
 
 # Copy templates
-COPY --from=go-builder /app/templates ./templates
+COPY --from=templ-generator /app/templates ./templates
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app

@@ -20,7 +20,7 @@ Inside each service directory is a `README.md` for info on deploying and using t
 - [Wiki](./wiki/README.md)
 - [Wiki Database](./wiki-db/README.md)
 - [Wiki Filesystem](./wiki-fs/README.md)
-- [Search] (./search/README.md)
+- [Search](./search/README.md)
 
 ## Common Tools
 
@@ -65,6 +65,18 @@ Install PostgreSQL from [https://www.postgresql.org/download/](https://www.postg
 This project mainly utilizes the command-line utility `psql` for testing databases, since the actual database is deployed using Docker.
 
 ---
+### Node/Bun
+
+[https://nodejs.org/en](https://nodejs.org/en)
+
+Install Node from [https://docs.npmjs.com/downloading-and-installing-node-js-and-npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+
+OR
+
+[https://bun.com/](https://bun.com/)
+
+Install Bun from [https://bun.com/](https://bun.com/)
+
+---
 
 
-## Developer Tools
