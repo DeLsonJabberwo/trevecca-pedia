@@ -56,7 +56,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 	// Get user by email
 	user, err := h.store.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("Login failed for %s: user not found", req.Email)
+		log.Printf("Login failed for %s: %v", req.Email, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
@@ -104,8 +104,11 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 		return
 	}
 
+	// Normalize email to lowercase for consistent DB lookups
+	req.Email = strings.ToLower(req.Email)
+
 	// Validate email domain
-	if !strings.HasSuffix(strings.ToLower(req.Email), allowedEmailDomain) {
+	if !strings.HasSuffix(req.Email, allowedEmailDomain) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "only @trevecca.edu email addresses are allowed"})
 		return
 	}
@@ -124,11 +127,14 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 	}
 
 	// Check if user already exists
-	existingUser, _ := h.store.GetUserByEmail(c.Request.Context(), req.Email)
-	if existingUser != nil {
+	existingUser, err := h.store.GetUserByEmail(c.Request.Context(), req.Email)
+	if err == nil && existingUser != nil {
+		// err == nil means the user was found (no error) — it's a duplicate
 		c.JSON(http.StatusConflict, gin.H{"error": "user with this email already exists"})
 		return
 	}
+	// err != nil here means "user not found" (expected) or a transient DB error;
+	// the subsequent RegisterUser call will surface any real DB failure.
 
 	// Hash password
 	hashedPassword, err := auth.HashPassword(req.Password)
@@ -138,32 +144,10 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 		return
 	}
 
-	// Create user
-	user, err := h.store.CreateUser(c.Request.Context(), req.Email, hashedPassword)
+	// Create user and assign contributor role atomically in one transaction
+	user, roles, err := h.store.RegisterUser(c.Request.Context(), req.Email, hashedPassword, "contributor")
 	if err != nil {
-		log.Printf("Error creating user %s: %v", req.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// Assign default contributor role
-	role, err := h.store.GetRoleByName(c.Request.Context(), "contributor")
-	if err != nil {
-		log.Printf("Error getting contributor role: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	if err := h.store.AddUserRole(c.Request.Context(), user.ID, role.ID); err != nil {
-		log.Printf("Error adding role to user %s: %v", req.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// Get user roles for response
-	roles, err := h.store.GetUserRoles(c.Request.Context(), user.ID)
-	if err != nil {
-		log.Printf("Error getting roles for user %s: %v", user.Email, err)
+		log.Printf("Error registering user %s: %v", req.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
