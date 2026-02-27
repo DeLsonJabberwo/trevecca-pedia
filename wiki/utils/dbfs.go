@@ -64,7 +64,7 @@ func CreateSnapshot(ctx context.Context, db *sql.DB, dataDir string, pageId uuid
 			INSERT INTO snapshots (page, revision)
 			VALUES ($1, $2)
 			RETURNING uuid;
-			`, pageId, revId).Scan(snapUUID)
+			`, pageId, revId).Scan(&snapUUID)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -89,34 +89,50 @@ func CreateSnapshot(ctx context.Context, db *sql.DB, dataDir string, pageId uuid
 		os.Remove(filepath.Join(dataDir, "snapshots", filename))
 		return uuid.UUID{}, err
 	}
-	return uuid.UUID{}, nil
+	return snapUUID, nil
 }
 
 func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageId uuid.UUID, revId uuid.UUID) (string, error) {
-	lastSnap, err := database.GetMostRecentSnapshot(ctx, db, revId)
-	if err == sql.ErrNoRows {
-		return "", wikierrors.RevisionNotFound()
-	}
+	// Check if any snapshots exist for this page
+	var snapCount int
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM snapshots WHERE page=$1
+	`, pageId).Scan(&snapCount)
 	if err != nil {
 		return "", wikierrors.DatabaseError(err)
-	}
-	missingRevs, err := database.GetMissingRevisions(ctx, db, revId)
-	if err != nil {
-		return "", wikierrors.DatabaseError(err)
-	}
-	revContent, err := filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
-	if err != nil {
-		return "", wikierrors.FilesystemError(err)
 	}
 
-	// i hope and pray that this works
-	// update: it worked. most errors were elsewhere :)
-	for _, r := range missingRevs {
-		revContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
+	// No snapshots yet — read the current file directly as the base
+	var revContent string
+	if snapCount == 0 {
+		revContent, err = filesystem.GetPageContent(ctx, db, dataDir, pageId)
 		if err != nil {
 			return "", wikierrors.FilesystemError(err)
 		}
-		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revContent)))
+	} else {
+		lastSnap, err := database.GetMostRecentSnapshot(ctx, db, revId)
+		if err != nil {
+			return "", wikierrors.DatabaseError(err)
+		}
+		revContent, err = filesystem.GetSnapshotContent(ctx, db, dataDir, lastSnap.UUID)
+		if err != nil {
+			return "", wikierrors.FilesystemError(err)
+		}
+	}
+
+	missingRevs, err := database.GetMissingRevisions(ctx, db, revId)
+	if err != nil {
+		// No snapshots means GetMissingRevisions will also fail
+		// In that case just return the current content — this is the first revision
+		return revContent, nil
+	}
+
+	for _, r := range missingRevs {
+		revisionContent, err := filesystem.GetRevisionContent(ctx, db, dataDir, *r.UUID)
+		if err != nil {
+			return "", wikierrors.FilesystemError(err)
+		}
+		files, _, err := gitdiff.Parse(bytes.NewReader([]byte(revisionContent)))
 		if err != nil {
 			return "", fmt.Errorf("couldn't parse revision: %w", err)
 		}
@@ -125,7 +141,6 @@ func GetContentAtRevision(ctx context.Context, db *sql.DB, dataDir string, pageI
 		}
 		src := bytes.NewReader([]byte(revContent))
 		var dst bytes.Buffer
-
 		err = gitdiff.Apply(&dst, src, files[0])
 		if err != nil {
 			if errors.Is(err, &gitdiff.Conflict{}) {
