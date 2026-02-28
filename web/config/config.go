@@ -10,6 +10,7 @@ import (
 
 var WikiURL string
 var SearchURL string
+var ImageServiceURL string
 var AuthURL string
 
 func init() {
@@ -17,10 +18,11 @@ func init() {
 		log.Println("Warning: .env file not found, using defaults")
 	}
 
-	apiURL := GetEnv("API_LAYER_URL", "http://127.0.0.1:2745/v1")
-	WikiURL = fmt.Sprintf("%s/wiki", apiURL)
-	SearchURL = fmt.Sprintf("%s/search", apiURL)
+	apiURL := GetEnv("API_LAYER_URL", "http://127.0.0.1:2745")
+	WikiURL = fmt.Sprintf("%s/v1/wiki", apiURL)
+	SearchURL = fmt.Sprintf("%s/v1/search", apiURL)
 	AuthURL = fmt.Sprintf("%s/auth", apiURL)
+  ImageServiceURL = GetEnv("IMAGE_SERVICE_URL", "https://treveccabuddy.tp-images.workers.dev")
 }
 
 func GetEnv(key, fallback string) string {

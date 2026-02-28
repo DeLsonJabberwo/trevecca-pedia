@@ -8,6 +8,7 @@ import (
 
 var WikiServiceURL string
 var SearchServiceURL string
+var ImageServiceURL string
 var AuthServiceURL string
 
 func init() {

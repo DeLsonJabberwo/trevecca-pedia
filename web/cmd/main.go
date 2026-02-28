@@ -3,7 +3,8 @@ package main
 import (
 	"web/auth"
 	"web/config"
-	"web/search"
+	"web/handlers/image"
+	"web/handlers/search"
 	"web/wiki"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,8 @@ func main() {
 	r.POST("/auth/register", auth.PostRegister)
 	r.GET("/auth/me", auth.GetMe)
 	r.POST("/auth/logout", auth.PostLogout)
+
+	r.GET("/image/*id", image.GetImage)
 
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")
 	r.Run(":" + port)
