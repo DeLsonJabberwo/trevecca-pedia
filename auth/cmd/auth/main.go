@@ -22,7 +22,7 @@ func main() {
 	}
 
 	// Connect to database
-	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	db, err := sql.Open("postgres", cfg.DatabaseURL())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
