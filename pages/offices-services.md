@@ -1,0 +1,48 @@
+# Offices & Services
+
+Trevecca is committed to providing excellent services to students. In fact, employees take great pleasure in providing that extra service that helps students accomplish their goals. Across the campus in all Trevecca offices, students and campus visitors will encounter University personnel who will go out of their way to help them obtain the information and service that they need.
+
+This area of the website provides information about the various services available to Trevecca students. Please select an office or service for additional details.
+
+## Campus Security
+
+The Trevecca Nazarene University security department employs seven full time armed officers, as well as part time and student officers. Trevecca Nazarene University’s Security Department strives to provide a safe learning and living environment for all Students, Faculty, Staff, and Guests.
+
+## Center for Human Flourishing
+
+The Center for Human Flourishing is a Trevecca initiative that equips Tennesseans for the work of human flourishing and holistic poverty alleviation. Through ongoing trainings, online resources and yearlong cohorts, the center resources frontline workers and leaders who are engaged in the work of reducing dependency and increasing upward stability for individuals and families across the state.
+
+## Center for Student Development
+
+The Center for Student Development provides a variety of resources to support students through a successful college journey. Here, students can find academic support, first year programs, disability services, and much more. This office exists to meet the diverse needs of the changing and diverse student population.
+
+## Counseling Center
+
+The Counseling Center strives to equip and encourage Trevecca students toward greater personal and community health. In keeping with the college mission, the Counseling Center fulfills a vital role in developing campus community by providing clinical mental health services to any student in need.
+
+## Office of Academic Records
+
+The Office of Academic Records maintains the master schedule for all classes and all academic records—specifically all student records: official transcripts, grades, course registration, drop/add course changes, major/minor changes, enrollment verifications and veteran verifications.
+
+## Office of Church Engagement
+
+Trevecca is a primary educational partner for Churches of the Nazarene across the Southeast USA, but it also seeks to partner with churches that name the name of Christ to minister hope and healing to God's creation. Trevecca is here to help support and encourage church leaders who identify with the University's focus on hearts totally yielded to God for service in this ever-changing world.
+
+## Office of Financial Services
+
+The Office of Financial Services is located on the 2nd floor of the Martin Building and is open for normal business hours: 8 a.m. to 4:30 p.m. Cashier closes at 4 p.m.
+
+## Office of Mission Excellence and Reconciliation
+
+In 2021, Trevecca announced the creation of the Office of Mission Excellence and Reconciliation. The role of this office includes providing intercultural and biblical reconciliation training for faculty, students, and employees, assisting campus leaders in implementing intercultural initiatives, and advising departments and teams throughout Trevecca’s campus to build a community of belonging for everyone with the love of God and love of others (Mark 12:31).
+
+## TNU Clinic
+
+The Trevecca Clinic is located on the ground floor of Georgia Hall and is open 8 a.m. - 4 p.m. Monday through Friday. The clinic is staffed by board-certified physician assistants.
+
+## Trevecca Grants
+
+Discover the exceptional support services at Trevecca Nazarene University that promote engagement in research and sponsored programs. Find funding opportunities and foster partnerships for innovation and discovery.
+
+---
+Source: https://www.trevecca.edu/offices-services
