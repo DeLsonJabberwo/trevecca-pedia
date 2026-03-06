@@ -2,9 +2,11 @@ package auth
 
 import "web/templates/components"
 
-templ AuthPage() {
+templ AuthPage(redirectURL string) {
 	<section class="py-12 sm:py-16 lg:py-20">
 		<div class="max-w-md mx-auto px-4 sm:px-6">
+			<!-- Hidden field to store redirect URL for JS -->
+			<input type="hidden" id="auth-redirect-url" value={ redirectURL } />
 			<!-- Tab switcher -->
 			<div class="flex mb-8 border-b border-neutral-200 dark:border-neutral-700">
 				<button

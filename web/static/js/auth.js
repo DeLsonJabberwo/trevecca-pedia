@@ -194,6 +194,14 @@ function _applyNavGuest() {
     const loginLink = document.getElementById('nav-login-link')
     const userMenu = document.getElementById('nav-user-menu')
     if (!loginLink || !userMenu) return
+    
+    // Update login link to include current page as redirect
+    // Don't add redirect if we're already on the login page
+    const currentPath = window.location.pathname + window.location.search
+    if (currentPath !== '/login') {
+        loginLink.href = '/login?redirect=' + encodeURIComponent(currentPath)
+    }
+    
     loginLink.classList.remove('hidden')
     userMenu.classList.add('hidden')
 
@@ -263,6 +271,14 @@ function hideError(elementId) {
     el.classList.add('hidden')
 }
 
+function getRedirectURL() {
+    var redirectInput = document.getElementById('auth-redirect-url')
+    if (redirectInput && redirectInput.value) {
+        return redirectInput.value
+    }
+    return '/'
+}
+
 async function handleLogin(e) {
     e.preventDefault()
     hideError('login-error')
@@ -270,7 +286,7 @@ async function handleLogin(e) {
     var password = document.getElementById('login-password').value
     try {
         await login(email, password)
-        window.location.href = '/'
+        window.location.href = getRedirectURL()
     } catch (err) {
         showError('login-error', err.message)
     }
@@ -288,7 +304,7 @@ async function handleRegister(e) {
     }
     try {
         await register(email, password)
-        window.location.href = '/'
+        window.location.href = getRedirectURL()
     } catch (err) {
         showError('register-error', err.message)
     }

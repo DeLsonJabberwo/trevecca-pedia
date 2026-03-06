@@ -60,4 +60,56 @@ if (document.getElementById('profile-loading')) {
     fetchProfile()
 }
 
-console.log('TreveccaPedia - Ready to explore!')
+// Wiki editor live preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const editTextarea = document.getElementById('edit-textarea')
+    const previewContent = document.getElementById('entry')
+    
+    if (editTextarea && previewContent) {
+        // Debounce function to limit API calls
+        let debounceTimer
+        function debounce(func, wait) {
+            clearTimeout(debounceTimer)
+            debounceTimer = setTimeout(func, wait)
+        }
+        
+        // Function to update preview
+        async function updatePreview() {
+            const content = editTextarea.value
+            
+            // Don't show preview for empty content
+            if (!content || content.trim() === '') {
+                previewContent.innerHTML = '<p class="text-gray-400 italic">Start typing to see preview...</p>'
+                return
+            }
+            
+            try {
+                const response = await fetch('/update-preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                })
+                
+                if (response.ok) {
+                    const data = await response.json()
+                    previewContent.innerHTML = data.html
+                } else {
+                    previewContent.innerHTML = '<p class="text-red-500">Failed to generate preview</p>'
+                }
+            } catch (error) {
+                previewContent.innerHTML = '<p class="text-red-500">Error connecting to preview service</p>'
+            }
+        }
+        
+        // Initial preview load
+        updatePreview()
+        
+        // Update preview on input with debouncing
+        editTextarea.addEventListener('input', function() {
+            debounce(updatePreview, 300)
+        })
+    }
+})
+

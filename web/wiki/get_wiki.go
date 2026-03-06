@@ -103,3 +103,28 @@ func GetEditPage(c *gin.Context) {
 	component := components.Page("Editing: "+page.Name, editContent)
 	component.Render(context.Background(), c.Writer)
 }
+
+// PostPreview handles markdown preview requests from the editor
+type PreviewRequest struct {
+	Content string `json:"content"`
+}
+
+type PreviewResponse struct {
+	HTML string `json:"html"`
+}
+
+func PostPreview(c *gin.Context) {
+	var req PreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	html, err := utils.ToHTML(req.Content)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to render markdown"})
+		return
+	}
+
+	c.JSON(http.StatusOK, PreviewResponse{HTML: html})
+}

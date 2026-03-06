@@ -9,7 +9,13 @@ import (
 )
 
 func GetLoginPage(c *gin.Context) {
-	content := auth.AuthPage()
+	// Get the redirect URL from the query parameter, default to home page
+	redirectURL := c.Query("redirect")
+	if redirectURL == "" {
+		redirectURL = "/"
+	}
+
+	content := auth.AuthPage(redirectURL)
 	page := components.Page("Log In", content)
 	if err := page.Render(c.Request.Context(), c.Writer); err != nil {
 		log.Printf("error rendering login page: %v", err)

@@ -4,46 +4,65 @@ import "web/utils"
 import "fmt"
 
 templ WikiEditContent(page utils.Page, errMsg string) {
-	<div class="max-w-4xl mx-auto px-4 py-8">
-		<div class="mb-6">
-			<h1 class="text-2xl font-bold">Editing: { page.Name }</h1>
-			<a
-				href={ templ.SafeURL(fmt.Sprintf("/pages/%s", page.Slug)) }
-				class="text-sm text-blue-600 hover:underline mt-1 inline-block"
+	<div class="flex flex-col lg:flex-row min-h-screen">
+		<!-- Left side: Editor -->
+		<div class="w-full lg:w-1/2 flex flex-col p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-neutral-200 dark:border-neutral-800">
+			<div class="mb-4">
+				<div class="flex items-center justify-between">
+					<h1 class="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Editing: { page.Name }</h1>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/pages/%s", page.Slug)) }
+						class="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+					>
+						&larr; Cancel
+					</a>
+				</div>
+			</div>
+			if errMsg != "" {
+				<div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+					<p class="text-sm font-medium text-red-800 dark:text-red-200">Unable to save changes</p>
+					<p class="text-sm text-red-600 dark:text-red-300 mt-1">{ errMsg }</p>
+				</div>
+			}
+			<form
+				action={ templ.SafeURL(fmt.Sprintf("/pages/%s/edit", page.Slug)) }
+				method="POST"
+				class="flex-1 flex flex-col"
 			>
-				&larr; Cancel, go back
-			</a>
+				<textarea
+					id="edit-textarea"
+					name="content"
+					class="flex-1 w-full font-mono text-sm p-4 bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-none focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-none"
+					spellcheck="false"
+					data-slug={ page.Slug }
+				>{ page.Content }</textarea>
+				<div class="flex gap-3 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+					<button
+						type="submit"
+						class="px-6 py-2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-lg hover:bg-neutral-700 dark:hover:bg-neutral-300 font-medium transition-colors"
+					>
+						Save Changes
+					</button>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/pages/%s", page.Slug)) }
+						class="px-6 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 font-medium transition-colors"
+					>
+						Cancel
+					</a>
+				</div>
+			</form>
 		</div>
-		if errMsg != "" {
-			<div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-				<p class="text-sm font-medium text-red-800">Unable to save changes</p>
-				<p class="text-sm text-red-600 mt-1">{ errMsg }</p>
+		
+		<!-- Right side: Preview -->
+		<div class="w-full lg:w-1/2 flex flex-col p-6 lg:p-8 bg-neutral-50 dark:bg-neutral-900/50">
+			<div class="mb-4">
+				<h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-200">Preview</h2>
 			</div>
-		}
-		<form
-			action={ templ.SafeURL(fmt.Sprintf("/pages/%s/edit", page.Slug)) }
-			method="POST"
-			class="space-y-4"
-		>
-			<textarea
-				name="content"
-				class="w-full h-96 font-mono text-sm p-4 border border-gray-300 rounded-lg focus:outline-none resize-y"
-				spellcheck="false"
-			>{ page.Content }</textarea>
-			<div class="flex gap-3">
-				<button
-					type="submit"
-					class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-				>
-					Save Changes
-				</button>
-				<a
-					href={ templ.SafeURL(fmt.Sprintf("/pages/%s", page.Slug)) }
-					class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-				>
-					Cancel
-				</a>
+			<div class="flex-1 overflow-auto">
+				<div id="entry" class="prose prose-lg dark:prose-invert max-w-none">
+					<p class="text-neutral-400 dark:text-neutral-600 italic">Start typing to see preview...</p>
+				</div>
 			</div>
-		</form>
+		</div>
 	</div>
 }

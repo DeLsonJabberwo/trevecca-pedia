@@ -46,19 +46,19 @@ templ HeroSection() {
 templ PagesDrawer(pages []utils.PageInfoPrev) {
 	<section class="border-t border-neutral-200 dark:border-neutral-800">
 		<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<button 
-				onclick="togglePagesDrawer()"
-				class="w-full flex items-center justify-between py-4 text-left group"
-			>
+		<button 
+			onclick="togglePagesDrawer()"
+			class="w-full flex items-center justify-between py-4 text-left group"
+		>
 				<div class="flex items-center gap-3">
-					<svg class="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg class="w-5 h-5 text-neutral-500 group-hover:text-neutral-700 dark:group-hover:text-neutral-300 group-hover:drop-shadow-[0_0_8px_rgba(100,100,100,0.5)] dark:group-hover:drop-shadow-[0_0_8px_rgba(200,200,200,0.5)] transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
 					</svg>
-					<h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
+					<h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-neutral-600 dark:group-hover:text-neutral-100 group-hover:drop-shadow-[0_0_8px_rgba(150,150,150,0.4)] dark:group-hover:drop-shadow-[0_0_8px_rgba(200,200,200,0.5)] transition-all duration-200">
 						Browse Pages ({ len(pages) })
 					</h2>
 				</div>
-				<svg id="drawer-chevron" class="w-5 h-5 text-neutral-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg id="drawer-chevron" class="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 group-hover:drop-shadow-[0_0_6px_rgba(150,150,150,0.4)] dark:group-hover:drop-shadow-[0_0_6px_rgba(200,200,200,0.4)] transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
 				</svg>
 			</button>
@@ -73,8 +73,8 @@ templ PageList(pages []utils.PageInfoPrev) {
 	<div class="grid gap-2 py-4">
 		for _, page := range pages {
 			<a href={ "./pages/" + page.Slug } class="group block">
-				<div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all">
-					<h3 class="font-medium text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors">
+				<div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 transition-all duration-200">
+					<h3 class="font-medium text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 group-hover:drop-shadow-[0_0_10px_rgba(150,150,150,0.4)] dark:group-hover:drop-shadow-[0_0_12px_rgba(200,200,200,0.5)] transition-all duration-200">
 						{ page.Name }
 					</h3>
 					<div class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
