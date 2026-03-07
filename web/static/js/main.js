@@ -65,6 +65,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const editTextarea = document.getElementById('edit-textarea')
     const previewContent = document.getElementById('entry')
     
+    // --- Mobile tab switching ---
+    function switchMobileEditTab(tab) {
+        const editorPanel = document.getElementById('mobile-editor-panel')
+        const previewPanel = document.getElementById('mobile-preview-panel')
+        const editTabBtn = document.getElementById('mobile-edit-tab')
+        const previewTabBtn = document.getElementById('mobile-preview-tab')
+        
+        if (!editorPanel || !previewPanel) return
+        
+        if (tab === 'edit') {
+            // Show editor, hide preview
+            editorPanel.classList.remove('hidden')
+            previewPanel.classList.add('hidden')
+            previewPanel.classList.remove('flex')
+            
+            // Update tab styles
+            editTabBtn.classList.add('border-neutral-900', 'dark:border-neutral-100', 'text-neutral-900', 'dark:text-neutral-100')
+            editTabBtn.classList.remove('border-transparent', 'text-neutral-500', 'dark:text-neutral-400')
+            previewTabBtn.classList.remove('border-neutral-900', 'dark:border-neutral-100', 'text-neutral-900', 'dark:text-neutral-100')
+            previewTabBtn.classList.add('border-transparent', 'text-neutral-500', 'dark:text-neutral-400')
+        } else {
+            // Show preview, hide editor
+            editorPanel.classList.add('hidden')
+            previewPanel.classList.remove('hidden')
+            previewPanel.classList.add('flex')
+            
+            // Update tab styles
+            previewTabBtn.classList.add('border-neutral-900', 'dark:border-neutral-100', 'text-neutral-900', 'dark:text-neutral-100')
+            previewTabBtn.classList.remove('border-transparent', 'text-neutral-500', 'dark:text-neutral-400')
+            editTabBtn.classList.remove('border-neutral-900', 'dark:border-neutral-100', 'text-neutral-900', 'dark:text-neutral-100')
+            editTabBtn.classList.add('border-transparent', 'text-neutral-500', 'dark:text-neutral-400')
+        }
+    }
+    
+    // Expose function globally for onclick handlers
+    window.switchMobileEditTab = switchMobileEditTab
+    
     if (editTextarea && previewContent) {
         // Debounce function to limit API calls
         let debounceTimer
