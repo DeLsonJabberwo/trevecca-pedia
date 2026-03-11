@@ -9,20 +9,6 @@ function toggleDarkMode() {
     }
 }
 
-// Pages drawer toggle functionality
-function togglePagesDrawer() {
-    const drawer = document.getElementById('pages-drawer')
-    const chevron = document.getElementById('drawer-chevron')
-    
-    if (drawer.classList.contains('hidden')) {
-        drawer.classList.remove('hidden')
-        chevron.style.transform = 'rotate(180deg)'
-    } else {
-        drawer.classList.add('hidden')
-        chevron.style.transform = 'rotate(0deg)'
-    }
-}
-
 // Search input focus effects
 const searchInput = document.querySelector('input[name="q"]')
 if (searchInput) {

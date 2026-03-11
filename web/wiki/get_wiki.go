@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 	"web/config"
 	"web/templates/components"
 	wikipages "web/templates/wiki-pages"
 	"web/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func GetPage(c *gin.Context) {
@@ -44,14 +42,11 @@ func GetPage(c *gin.Context) {
 
 func GetHome(c *gin.Context) {
 	c.Header("Content-Type", "text/html")
-	pages, err := getPages()
+	categories, err := getCategories()
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("Couldn't fetch page info: %w\n", err))
+		categories = []utils.Category{}
 	}
-	if len(pages) == 0 {
-		pages = append(pages, utils.PageInfoPrev{UUID: uuid.UUID{}, Slug: "", Name: "Not Found", LastEditTime: time.Time{}, ArchiveDate: time.Time{}, Preview: "No pages found"})
-	}
-	homeComp := components.HomeContent(pages)
+	homeComp := components.HomeContent(categories)
 	page := components.Page("TreveccaPedia", homeComp)
 	page.Render(context.Background(), c.Writer)
 }
@@ -75,6 +70,27 @@ func getPages() ([]utils.PageInfoPrev, error) {
 	}
 
 	return pages, nil
+}
+
+func getCategories() ([]utils.Category, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/categories?root=true", config.WikiURL))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var categories []utils.Category
+	err = json.Unmarshal(body, &categories)
+	if err != nil {
+		return nil, err
+	}
+
+	return categories, nil
 }
 
 func GetEditPage(c *gin.Context) {

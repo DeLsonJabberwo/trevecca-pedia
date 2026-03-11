@@ -123,7 +123,11 @@ func GetIndexablePages(c *gin.Context) {
 }
 
 func GetCategories(c *gin.Context) {
-	res, err := http.Get(fmt.Sprintf("%s/categories", config.WikiServiceURL))
+	tree := c.DefaultQuery("tree", "false")
+	root := c.DefaultQuery("root", "false")
+
+	res, err := http.Get(fmt.Sprintf("%s/categories?tree=%s&root=%s",
+		config.WikiServiceURL, tree, root))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch categories."})
 		return
@@ -156,4 +160,3 @@ func GetPageCategories(c *gin.Context) {
 
 	c.Data(res.StatusCode, res.Header.Get("Content-Type"), body)
 }
-
