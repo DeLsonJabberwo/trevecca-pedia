@@ -262,4 +262,3 @@ func computeFullSlug(path string) string {
 	}
 	return strings.Join(parts, "/")
 }
-

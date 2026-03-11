@@ -122,7 +122,7 @@ func GetPagesBySlugs(ctx context.Context, db *sql.DB, dataDir string, slugList [
 	return pages
 }
 
-func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string, 
+func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string,
 	catSlug string, ind int, count int, exact bool) ([]utils.PageInfoPrev, error) {
 
 	var categoryIds []int
@@ -143,7 +143,7 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string,
 
 	var pagesCount int
 	err = db.QueryRowContext(ctx, `
-		SELECT COUNT(DISTINCT p.uuid) FROM pages
+		SELECT COUNT(DISTINCT p.uuid) FROM pages p
 		JOIN page_categories pc ON p.uuid = pc.page_id
 		WHERE pc.category = ANY($1) AND p.deleted_at IS NULL;
 	`, pq.Array(categoryIds)).Scan(&pagesCount)
@@ -157,7 +157,7 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string,
 	}
 
 	uuids, err := db.QueryContext(ctx, `
-		SELECT DISTINCT p.uuid FROM pages
+		SELECT DISTINCT p.uuid, p.slug FROM pages p
 		JOIN page_categories pc ON p.uuid = pc.page_id
 		WHERE pc.category = ANY($1) AND p.deleted_at IS NULL
 		ORDER BY p.slug
@@ -172,7 +172,8 @@ func GetPagesCategory(ctx context.Context, db *sql.DB, dataDir string,
 	var pages []utils.PageInfoPrev
 	for uuids.Next() {
 		var pageUUID uuid.UUID
-		err := uuids.Scan(&pageUUID)
+		var slug string
+		err := uuids.Scan(&pageUUID, &slug)
 		if err != nil {
 			return nil, wikierrors.DatabaseError(err)
 		}
@@ -234,7 +235,6 @@ func GetRevision(ctx context.Context, db *sql.DB, dataDir string, revId string) 
 	rev.Name = revInfo.Name
 	rev.ArchiveDate = revInfo.ArchiveDate
 	rev.DeletedAt = revInfo.DeletedAt
-
 
 	rev.Content, err = utils.GetContentAtRevision(ctx, db, dataDir, rev.PageId, rev.UUID)
 	if err != nil {

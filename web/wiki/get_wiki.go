@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"web/config"
+	categorytemplates "web/templates/category"
 	"web/templates/components"
 	wikipages "web/templates/wiki-pages"
 	"web/utils"
@@ -51,8 +52,67 @@ func GetHome(c *gin.Context) {
 	page.Render(context.Background(), c.Writer)
 }
 
+func GetCategoryPages(c *gin.Context) {
+	c.Header("Content-Type", "text/html")
+	categorySlug := c.Query("category")
+
+	categories, err := getCategories()
+	if err != nil {
+		categories = []utils.Category{}
+	}
+
+	pages, err := getPagesByCategory(categorySlug)
+	if err != nil {
+		pages = []utils.PageInfoPrev{}
+	}
+
+	// Resolve category name from slug
+	categoryName := "All Categories"
+	for _, cat := range categories {
+		if cat.FullSlug == categorySlug {
+			categoryName = cat.Name
+			break
+		}
+	}
+
+	title := categoryName
+	if categorySlug == "" {
+		title = "All Pages"
+	}
+
+	content := categorytemplates.CategoryContent(categorySlug, categoryName, categories, pages)
+	component := components.Page(title, content)
+	component.Render(context.Background(), c.Writer)
+}
+
 func getPages() ([]utils.PageInfoPrev, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/pages", config.WikiURL))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var pages []utils.PageInfoPrev
+	err = json.Unmarshal(body, &pages)
+	if err != nil {
+		return nil, err
+	}
+
+	return pages, nil
+}
+
+func getPagesByCategory(category string) ([]utils.PageInfoPrev, error) {
+	url := fmt.Sprintf("%s/pages", config.WikiURL)
+	if category != "" {
+		url = fmt.Sprintf("%s/pages?category=%s", config.WikiURL, category)
+	}
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}

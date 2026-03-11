@@ -52,6 +52,17 @@ templ CategoryCards(categories []utils.Category) {
 				class="grid grid-cols-2 lg:grid-cols-4 gap-5"
 				style="perspective: 1000px;"
 			>
+				<a
+					href={ templ.SafeURL("/pages") }
+					class="category-card group block rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 px-6 py-10 text-center transition-all duration-300 hover:shadow-lg hover:shadow-neutral-300/50 dark:hover:shadow-md dark:hover:shadow-neutral-400/15"
+					style="transform-style: preserve-3d; will-change: transform;"
+					onmousemove="tiltCard(event, this)"
+					onmouseleave="resetCard(this)"
+				>
+					<h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors duration-200">
+						All Categories
+					</h3>
+				</a>
 				for _, cat := range categories {
 					<a
 						href={ templ.SafeURL("/pages?category=" + cat.Slug) }
