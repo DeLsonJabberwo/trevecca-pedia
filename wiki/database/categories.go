@@ -164,7 +164,7 @@ func GetDescendantCategoryIDs(ctx context.Context, db *sql.DB, slugPath string) 
 func GetPageCategories(ctx context.Context, db *sql.DB, pageId string) ([]Category, error) {
 	pageUUID, err := GetUUID(ctx, db, pageId)
 	if err != nil {
-		return nil, wikierrors.DatabaseError(err)
+		return nil, wikierrors.PageNotFound()
 	}
 	rows, err := db.QueryContext(ctx, `
 		SELECT c.id, c.slug, c.name, c.parent_id, c.path
