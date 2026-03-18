@@ -20,7 +20,7 @@ So, calls to the `wiki` service begin with: `/v1/wiki`
 ## Authentication
 
 - Read routes are public.
-- Write routes require `Authorization: Bearer <jwt>` and the JWT must contain the `contributor` role.
+- Write routes require `Authorization: Bearer <jwt>` and the JWT must contain the `contributor` role (or higher privileged roles like `moderator` or `admin`).
 
 ### HTTP `GET` Requests
 

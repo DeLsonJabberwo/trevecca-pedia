@@ -37,6 +37,7 @@ Success response:
 
 Notes:
 - The upstream API layer returns `accessToken`, but the web service strips it and only returns `user`.
+- The `roles` array may include additional roles (e.g., `moderator`) depending on user permissions.
 
 ### `POST /auth/register`
 
