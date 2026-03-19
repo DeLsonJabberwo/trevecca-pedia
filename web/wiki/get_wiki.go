@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"web/auth"
 	"web/config"
 	categorytemplates "web/templates/category"
 	"web/templates/components"
@@ -17,6 +18,10 @@ import (
 
 func GetPage(c *gin.Context) {
 	id := c.Param("id")
+
+	// Check if user is a moderator
+	user, _ := auth.GetUserFromContext(c)
+	isModerator := auth.HasRole(user, "moderator")
 
 	// Fetch page and categories in parallel
 	pageResp, err := http.Get(fmt.Sprintf("%s/pages/%s", config.WikiURL, id))
@@ -44,7 +49,7 @@ func GetPage(c *gin.Context) {
 	page.Categories = categories
 
 	saved := c.Query("saved") == "true"
-	entryContent := wikipages.WikiEntryContent(page, saved)
+	entryContent := wikipages.WikiEntryContent(page, saved, isModerator)
 	component := components.Page(page.Name, entryContent)
 	component.Render(context.Background(), c.Writer)
 }
@@ -55,7 +60,8 @@ func GetHome(c *gin.Context) {
 	if err != nil {
 		categories = []utils.Category{}
 	}
-	homeComp := components.HomeContent(categories)
+	deleted := c.Query("deleted") == "true"
+	homeComp := components.HomeContent(categories, deleted)
 	page := components.Page("TreveccaPedia", homeComp)
 	page.Render(context.Background(), c.Writer)
 }

@@ -33,9 +33,15 @@ func main() {
 	protected.Use(middleware.AuthMiddleware(), middleware.RequireRole("contributor"))
 	{
 		protected.POST("/pages/new", wiki.PostNewPage)
-		protected.POST("/pages/:id/delete", wiki.PostDeletePage)
 		protected.POST("/pages/:id/revisions", wiki.PostPageRevision)
 		protected.POST("/pages/:id/categories", wiki.PostPageCategories)
+	}
+
+	// Moderator-only endpoints - require valid token and moderator role
+	moderator := r.Group("/v1/wiki")
+	moderator.Use(middleware.AuthMiddleware(), middleware.RequireRole("moderator"))
+	{
+		moderator.POST("/pages/:id/delete", wiki.PostDeletePage)
 	}
 
 	r.GET("/v1/search/search", search.SearchRequest)
