@@ -40,6 +40,13 @@ func main() {
 		protected.POST("/update-preview", wiki.PostPreview)
 	}
 
+	// Moderator-only routes - require moderator role
+	moderator := r.Group("/")
+	moderator.Use(auth.RequireRole("moderator"))
+	{
+		moderator.POST("/pages/:id/delete", wiki.PostDeletePage)
+	}
+
 	r.GET("/image/*id", image.GetImage)
 
 	port := config.GetEnv("WEB_SERVICE_PORT", "8080")
