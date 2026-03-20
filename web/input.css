@@ -155,4 +155,20 @@
     .dark #entry th {
         border-color: #e5e7eb;
     }
+
+    /* Revision history - highlight inserted content */
+    .revision-insert {
+        background-color: rgba(234, 179, 8, 0.3);
+        border-radius: 2px;
+        padding: 0 2px;
+    }
+    
+    .dark .revision-insert {
+        background-color: rgba(234, 179, 8, 0.25);
+    }
+
+    /* Ensure mark elements inherit color properly in dark mode */
+    #entry mark {
+        color: inherit;
+    }
 }

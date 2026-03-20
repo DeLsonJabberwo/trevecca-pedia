@@ -90,6 +90,16 @@ templ WikiEntryContent(page utils.Page, saved bool, isModerator bool) {
                 </svg>
                 Edit
             </a>
+            <!-- Inline history button: visible on md+ screens only -->
+            <a
+                href={ templ.SafeURL(fmt.Sprintf("/pages/%s/history", page.Slug)) }
+                class="hidden md:flex flex-shrink-0 items-center gap-2 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 font-medium text-sm transition-colors"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                History
+            </a>
             <!-- Inline delete button: visible on md+ screens only, moderator only -->
             if isModerator {
                 <button
@@ -112,6 +122,16 @@ templ WikiEntryContent(page utils.Page, saved bool, isModerator bool) {
     >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+    </a>
+    <!-- Floating history FAB: visible on small screens only -->
+    <a
+        href={ templ.SafeURL(fmt.Sprintf("/pages/%s/history", page.Slug)) }
+        class="md:hidden fixed bottom-20 right-6 z-40 p-3 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-full shadow-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+        aria-label="View history"
+    >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
     </a>
     <!-- Floating delete FAB: visible on small screens only, moderator only -->
