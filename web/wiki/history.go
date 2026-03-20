@@ -249,8 +249,8 @@ func fetchRevision(id, revId string) (utils.Revision, error) {
 	return revision, nil
 }
 
-// highlightChanges compares content and highlights changes using word-level diff
-// Returns the highlighted HTML content and a boolean indicating if there are changes
+// highlightChanges compares content and shows deleted text with strikethrough
+// Returns the HTML content with deletions shown and a boolean indicating if there are changes
 func highlightChanges(currentContent string, previousRevision *utils.Revision) (string, bool) {
 	// Convert current content to HTML
 	currentHTML, err := utils.ToHTML(currentContent)
@@ -274,14 +274,12 @@ func highlightChanges(currentContent string, previousRevision *utils.Revision) (
 		return currentHTML, false
 	}
 
-	// Use diffmatchpatch to find differences on HTML
+	// Use diffmatchpatch to find differences
 	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(previousHTML, currentHTML, true)
-
-	// Clean up the diff to be more semantic (word-level rather than char-level)
+	diffs := dmp.DiffMain(previousHTML, currentHTML, false)
 	diffs = dmp.DiffCleanupSemantic(diffs)
 
-	// Check if there are any actual changes (insertions or deletions)
+	// Check if there are actual changes
 	hasChanges := false
 	for _, diff := range diffs {
 		if diff.Type == diffmatchpatch.DiffInsert || diff.Type == diffmatchpatch.DiffDelete {
@@ -294,50 +292,83 @@ func highlightChanges(currentContent string, previousRevision *utils.Revision) (
 		return currentHTML, false
 	}
 
-	// Build result with highlighted changes
+	// Build result showing current content with deletions as strikethrough
 	var result strings.Builder
-
 	for _, diff := range diffs {
 		switch diff.Type {
 		case diffmatchpatch.DiffInsert:
-			// New content - highlight as addition
-			highlighted := highlightInsert(diff.Text)
-			result.WriteString(highlighted)
+			// Added content - wrap with appropriate element based on content type
+			text := diff.Text
+			trimmed := strings.TrimSpace(text)
+			if trimmed == "" {
+				result.WriteString(text)
+			} else if containsBlockLevelTags(trimmed) {
+				// Block-level content - wrap in div
+				result.WriteString(`<div class="revision-added-block">`)
+				result.WriteString(text)
+				result.WriteString(`</div>`)
+			} else {
+				// Inline content - wrap in span
+				result.WriteString(`<span class="revision-added">`)
+				result.WriteString(text)
+				result.WriteString(`</span>`)
+			}
 		case diffmatchpatch.DiffDelete:
-			// Deleted content - don't show in current version
-			continue
+			// Deleted content - wrap with appropriate element based on content type
+			text := diff.Text
+			trimmed := strings.TrimSpace(text)
+			if trimmed == "" {
+				// Skip whitespace-only deletions
+			} else if containsBlockLevelTags(trimmed) {
+				// Block-level content - wrap in div
+				result.WriteString(`<div class="revision-deleted-block">`)
+				result.WriteString(text)
+				result.WriteString(`</div>`)
+			} else {
+				// Inline content - wrap in span with strikethrough
+				result.WriteString(`<span class="revision-deleted">`)
+				result.WriteString(text)
+				result.WriteString(`</span>`)
+			}
 		case diffmatchpatch.DiffEqual:
-			// Unchanged content
+			// Unchanged content - show as-is
 			result.WriteString(diff.Text)
 		}
 	}
 
-	return result.String(), hasChanges
+	return result.String(), true
 }
 
-// blockLevelTags are HTML tags that create block-level elements
-var blockLevelTags = []string{"<p", "</p>", "<div", "</div>", "<h1", "</h1>", "<h2", "</h2>",
-	"<h3", "</h3>", "<h4", "</h4>", "<h5", "</h5>", "<h6", "</h6>",
-	"<ul", "</ul>", "<ol", "</ol>", "<li", "</li>", "<blockquote", "</blockquote>",
-	"<pre", "</pre>", "<table", "</table>", "<tr", "</tr>", "<td", "</td>", "<th", "</th>"}
-
-// highlightInsert wraps text content in mark tags while preserving HTML structure
-func highlightInsert(text string) string {
-	// If the text doesn't contain any HTML tags, just wrap it
-	if !strings.Contains(text, "<") {
-		return `<mark class="revision-insert">` + text + `</mark>`
+// containsBlockLevelTags checks if the text contains block-level HTML elements
+// that shouldn't be wrapped in inline span elements
+func containsBlockLevelTags(text string) bool {
+	// List of block-level HTML tags that shouldn't be wrapped in inline spans
+	blockLevelTags := []string{
+		"<p", "</p",
+		"<div", "</div",
+		"<h1", "</h1",
+		"<h2", "</h2",
+		"<h3", "</h3",
+		"<h4", "</h4",
+		"<h5", "</h5",
+		"<h6", "</h6",
+		"<ul", "</ul",
+		"<ol", "</ol",
+		"<li", "</li",
+		"<table", "</table",
+		"<thead", "</thead",
+		"<tbody", "</tbody",
+		"<tr", "</tr",
+		"<blockquote", "</blockquote",
+		"<pre", "</pre",
+		"<hr",
 	}
 
-	// Check if the insertion contains block-level tags
-	// If so, we shouldn't wrap the whole thing as it would break HTML structure
+	lowerText := strings.ToLower(text)
 	for _, tag := range blockLevelTags {
-		if strings.Contains(text, tag) {
-			// Contains block-level tags - just return as-is without highlighting
-			// to avoid creating invalid HTML
-			return text
+		if strings.Contains(lowerText, tag) {
+			return true
 		}
 	}
-
-	// Only contains inline tags - safe to wrap the whole thing
-	return `<mark class="revision-insert">` + text + `</mark>`
+	return false
 }
