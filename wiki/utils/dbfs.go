@@ -30,7 +30,7 @@ func CreateRevision(ctx context.Context, db *sql.DB, tx *sql.Tx, dataDir string,
 			RETURNING uuid;
 			`, pageUUID, revReq.Author, revReq.Slug, revReq.Name, revReq.ArchiveDate, revReq.DeletedAt).Scan(&revUUID)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("INSERT revisions failed: %w", err)
+		return uuid.UUID{}, err
 	}
 
 	// Get the current last revision ID to reconstruct the content at that revision
@@ -39,7 +39,7 @@ func CreateRevision(ctx context.Context, db *sql.DB, tx *sql.Tx, dataDir string,
 		SELECT last_revision_id FROM pages WHERE uuid=$1;
 	`, pageUUID).Scan(&lastRevisionId)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("querying last_revision_id failed: %w", err)
+		return uuid.UUID{}, err
 	}
 
 	// Get the content at the last revision (or empty string if this is the first revision)
@@ -47,7 +47,7 @@ func CreateRevision(ctx context.Context, db *sql.DB, tx *sql.Tx, dataDir string,
 	if lastRevisionId != nil {
 		pageContent, err = GetContentAtRevision(ctx, db, dataDir, pageUUID, *lastRevisionId)
 		if err != nil {
-			return uuid.UUID{}, fmt.Errorf("GetContentAtRevision failed: %w", err)
+			return uuid.UUID{}, err
 		}
 	}
 

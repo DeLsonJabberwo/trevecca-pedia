@@ -30,7 +30,7 @@ func GetPageHistory(c *gin.Context) {
 	}
 
 	// Get revisions - fetch more to ensure we can find previous revision for older entries
-	revisions, err := fetchRevisions(id, 0, 100)
+	revisions, err := fetchRevisions(id, 0, 20)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
