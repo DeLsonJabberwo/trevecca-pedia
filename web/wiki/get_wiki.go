@@ -110,27 +110,6 @@ func GetCategoryPages(c *gin.Context) {
 	component.Render(context.Background(), c.Writer)
 }
 
-func getPages() ([]utils.PageInfoPrev, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/pages", config.WikiURL))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var pages []utils.PageInfoPrev
-	err = json.Unmarshal(body, &pages)
-	if err != nil {
-		return nil, err
-	}
-
-	return pages, nil
-}
-
 func getPagesByCategory(category string) ([]utils.PageInfoPrev, error) {
 	url := fmt.Sprintf("%s/pages", config.WikiURL)
 	if category != "" {
