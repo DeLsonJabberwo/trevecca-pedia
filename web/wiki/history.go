@@ -103,60 +103,6 @@ func GetPageHistory(c *gin.Context) {
 	component.Render(context.Background(), c.Writer)
 }
 
-// GetRevisionContent returns just the article content for HTMX swaps
-func GetRevisionContent(c *gin.Context) {
-	id := c.Param("id")
-	revId := c.Param("revId")
-
-	page, err := fetchPageData(id)
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	revision, err := fetchRevision(id, revId)
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	// Get all revisions to find the number and previous revision
-	revisions, err := fetchRevisions(id, 0, 100)
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	var revisionNumber int
-	var previousRevision *utils.Revision
-	for i, rev := range revisions {
-		if rev.UUID == revision.UUID {
-			revisionNumber = len(revisions) - i
-			if i < len(revisions)-1 {
-				// Fetch the full previous revision content since the list doesn't include it
-				prevRevId := revisions[i+1].UUID.String()
-				prevRev, err := fetchRevision(id, prevRevId)
-				if err == nil {
-					previousRevision = &prevRev
-				}
-			}
-			break
-		}
-	}
-
-	highlightedContent, hasChanges := highlightChanges(revision.Content, previousRevision)
-
-	// Render both article and updated timeline selection
-	// Article replaces #article-content, timeline updates selection via hx-swap-oob
-	articleContent := wikipages.WikiHistoryArticle(page, revision, highlightedContent, revisionNumber, hasChanges)
-	timelineContent := wikipages.WikiHistoryTimeline(revisions, revId, len(revisions))
-
-	// First render article, then timeline with oob swap
-	articleContent.Render(context.Background(), c.Writer)
-	// Timeline will have hx-swap-oob="true" to update out-of-band
-	timelineContent.Render(context.Background(), c.Writer)
-}
-
 // GetTimelinePartial returns more timeline items for infinite scroll
 func GetTimelinePartial(c *gin.Context) {
 	id := c.Param("id")
