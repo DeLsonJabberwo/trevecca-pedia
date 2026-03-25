@@ -45,10 +45,8 @@ var httpClient = &http.Client{
 // GetUserProfilePage handles GET /users/:username
 func GetUserProfilePage(c *gin.Context) {
 	username := c.Param("username")
-	log.Printf("DEBUG: Profile page requested for username: %s", username)
 
 	if username == "" {
-		log.Printf("DEBUG: Empty username, redirecting to home")
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
@@ -56,7 +54,6 @@ func GetUserProfilePage(c *gin.Context) {
 	// Fetch user data from auth service
 	user, err := fetchUserByUsername(username)
 	if err != nil {
-		log.Printf("DEBUG: Error fetching user %s: %v", username, err)
 		// Check if it's a 404 (user not found)
 		if err.Error() == "user not found" {
 			// Render user not found page with HTTP 200
@@ -74,10 +71,9 @@ func GetUserProfilePage(c *gin.Context) {
 		return
 	}
 
-	log.Printf("DEBUG: Found user %s with email %s", username, user.Email)
 
-	// Fetch initial revisions (first 20)
-	revisions, hasMore, err := fetchRevisionsByAuthor(user.Email, 0, 20)
+	// Fetch initial revisions (first 20) - pass only the username part of email
+	revisions, hasMore, err := fetchRevisionsByAuthor(username, 0, 20)
 	if err != nil {
 		log.Printf("error fetching revisions for user %s: %v", username, err)
 		// Continue with empty revisions
@@ -85,7 +81,6 @@ func GetUserProfilePage(c *gin.Context) {
 		hasMore = false
 	}
 
-	log.Printf("DEBUG: Found %d revisions for user %s, hasMore: %v", len(revisions), username, hasMore)
 
 	// Build profile user data
 	profileUser := users.ProfileUser{
@@ -96,7 +91,6 @@ func GetUserProfilePage(c *gin.Context) {
 		CreatedAt: user.CreatedAt,
 	}
 
-	log.Printf("DEBUG: Rendering profile page for user %+v", profileUser)
 
 	// Render profile page using the same pattern as wiki handlers
 	c.Header("Content-Type", "text/html")
@@ -108,7 +102,6 @@ func GetUserProfilePage(c *gin.Context) {
 		return
 	}
 
-	log.Printf("DEBUG: Profile page rendered successfully for %s", username)
 }
 
 // GetUserRevisionsPartial handles GET /users/:username/revisions for HTMX infinite scroll
@@ -120,16 +113,8 @@ func GetUserRevisionsPartial(c *gin.Context) {
 		offset = 20
 	}
 
-	// Fetch user to get email
-	user, err := fetchUserByUsername(username)
-	if err != nil {
-		log.Printf("error fetching user %s for revisions: %v", username, err)
-		c.String(http.StatusNotFound, "User not found")
-		return
-	}
-
-	// Fetch revisions with offset
-	revisions, hasMore, err := fetchRevisionsByAuthor(user.Email, offset, 20)
+	// Fetch revisions with offset - use username directly (API layer appends @trevecca.edu)
+	revisions, hasMore, err := fetchRevisionsByAuthor(username, offset, 20)
 	if err != nil {
 		log.Printf("error fetching revisions for user %s: %v", username, err)
 		c.String(http.StatusInternalServerError, "Internal Server Error")
