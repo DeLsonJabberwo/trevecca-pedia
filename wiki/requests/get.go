@@ -278,7 +278,7 @@ func GetRevisions(ctx context.Context, db *sql.DB, pageId string, ind int, count
 
 	uuids, err := db.QueryContext(
 		ctx,
-		"SELECT uuid FROM revisions WHERE page_id=$1 LIMIT $2 OFFSET $3",
+		"SELECT uuid FROM revisions WHERE page_id=$1 ORDER BY date_time DESC LIMIT $2 OFFSET $3",
 		pageUUID, count, ind)
 	if err != nil {
 		return nil, wikierrors.DatabaseError(err)
