@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"api-layer/config"
@@ -72,12 +73,10 @@ func RequireRole(role string) gin.HandlerFunc {
 			return
 		}
 
-		for _, r := range roles {
-			if r == role {
+		if slices.Contains(roles, role) {
 				c.Next()
 				return
 			}
-		}
 
 		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		c.Abort()
@@ -87,7 +86,7 @@ func RequireRole(role string) gin.HandlerFunc {
 func validateToken(tokenString string) (*Claims, error) {
 	secret := config.GetJWTSecret()
 
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

@@ -53,6 +53,7 @@ case "${1:-}" in
             STOP_FLAGS+=(--profile "$svc")
         done
         docker compose "${STOP_FLAGS[@]}" down -v
+        docker compose -f mod-db/docker-compose.yml down -v
         echo -e "\n${GREEN}All services stopped.${NC}"
         exit 0
         ;;
@@ -136,11 +137,13 @@ print_header "TreveccaPedia Dev Environment"
 # Always start databases first
 echo -e "\n${BLUE}Starting databases...${NC}"
 docker compose up -d wiki-db auth-db
+docker compose -f mod-db/docker-compose.yml up -d mod-db
 
 # Wait for databases to be healthy
 echo -e "${BLUE}Waiting for databases to be healthy...${NC}"
 docker compose exec wiki-db sh -c 'until pg_isready -U wiki_user -d wiki; do sleep 1; done' 2>/dev/null
 docker compose exec auth-db sh -c 'until pg_isready -U ${POSTGRES_USER:-auth_user} -d ${POSTGRES_DB:-auth} -p 5433; do sleep 1; done' 2>/dev/null
+docker compose -f mod-db/docker-compose.yml exec mod-db sh -c 'until pg_isready -U mod_user -d mod -p 5432; do sleep 1; done' 2>/dev/null
 echo -e "${GREEN}Databases are ready.${NC}"
 
 # Start Docker services (if any)
@@ -155,6 +158,7 @@ print_header "Environment Ready"
 echo -e "\n${BOLD}Databases:${NC}"
 echo -e "  ${GREEN}[Docker]${NC}  wiki-db   (localhost:5432)"
 echo -e "  ${GREEN}[Docker]${NC}  auth-db   (localhost:5433)"
+echo -e "  ${GREEN}[Docker]${NC}  mod-db    (localhost:5434)"
 
 echo -e "\n${BOLD}Services:${NC}"
 for svc in "${ALL_SERVICES[@]}"; do

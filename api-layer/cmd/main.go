@@ -3,6 +3,7 @@ package main
 import (
 	"api-layer/config"
 	authHandlers "api-layer/handlers/auth"
+	"api-layer/handlers/mod"
 	"api-layer/handlers/search"
 	"api-layer/handlers/wiki"
 	"api-layer/middleware"
@@ -52,6 +53,19 @@ func main() {
 	r.POST("/v1/auth/register", authHandlers.PostRegister)
 	r.GET("/v1/auth/me", authHandlers.GetMe)
 	r.GET("/v1/auth/users/:username", authHandlers.GetUser)
+
+	// Moderation endpoints - auth token forwarded to moderation service for validation
+	modGroup := r.Group("/v1/mod")
+	modGroup.Use(middleware.AuthMiddleware())
+	{
+		modGroup.GET("/flagged-users", mod.GetFlaggedUsers)
+		modGroup.GET("/silenced-users", mod.GetSilencedUsers)
+		modGroup.GET("/statuses", mod.GetStatuses)
+		modGroup.POST("/flag-user", mod.PostFlagUser)
+		modGroup.POST("/unflag-user", mod.PostUnflagUser)
+		modGroup.POST("/silence-user", mod.PostSilenceUser)
+		modGroup.POST("/unsilence-user", mod.PostUnsilenceUser)
+	}
 
 	port := config.GetEnv("API_LAYER_PORT", "2745")
 	r.Run(fmt.Sprintf(":%s", port))

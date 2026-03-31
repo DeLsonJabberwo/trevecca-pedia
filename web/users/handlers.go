@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"web/auth"
 	"web/config"
 	"web/templates/components"
 	"web/templates/users"
@@ -36,6 +37,12 @@ type RevisionResponse struct {
 	Name        string     `json:"name"`
 	ArchiveDate *time.Time `json:"archive_date"`
 	DeletedAt   *time.Time `json:"deleted_at"`
+}
+
+// ModerationStatusResponse represents moderation status from moderation service
+type ModerationStatusResponse struct {
+	Flagged  bool `json:"Flagged"`
+	Silenced bool `json:"Silenced"`
 }
 
 // httpClient with timeout
@@ -72,7 +79,6 @@ func GetUserProfilePage(c *gin.Context) {
 		return
 	}
 
-
 	// Fetch initial revisions (first 20) - pass only the username part of email
 	revisions, hasMore, err := fetchRevisionsByAuthor(username, 0, 20)
 	if err != nil {
@@ -82,6 +88,27 @@ func GetUserProfilePage(c *gin.Context) {
 		hasMore = false
 	}
 
+	// Check if current user is a moderator
+	currentUser, _ := auth.GetUserFromContext(c)
+	isModerator := auth.HasRole(currentUser, "moderator")
+
+	// Get auth token for moderation service calls
+	tokenCookie, _ := c.Cookie("auth_token")
+
+	// Fetch moderation status if user is a moderator
+	var modStatus users.ModerationStatus
+	if isModerator {
+		modStatusResponse, err := fetchModerationStatus(username, tokenCookie)
+		if err != nil {
+			log.Printf("error fetching moderation status for user %s: %v", username, err)
+			// Continue with default (false) status
+		} else {
+			modStatus = users.ModerationStatus{
+				IsFlagged:  modStatusResponse.Flagged,
+				IsSuspended: modStatusResponse.Silenced,
+			}
+		}
+	}
 
 	// Build profile user data
 	profileUser := users.ProfileUser{
@@ -92,10 +119,9 @@ func GetUserProfilePage(c *gin.Context) {
 		CreatedAt: user.CreatedAt,
 	}
 
-
 	// Render profile page using the same pattern as wiki handlers
 	c.Header("Content-Type", "text/html")
-	profileContent := users.ProfileContent(profileUser, revisions, hasMore)
+	profileContent := users.ProfileContent(profileUser, revisions, hasMore, isModerator, modStatus)
 	page := components.Page(profileUser.Username+"'s Profile", profileContent)
 	if err := page.Render(context.Background(), c.Writer); err != nil {
 		log.Printf("error rendering profile page: %v", err)
@@ -220,4 +246,281 @@ func ExtractUsername(email string) string {
 		return parts[0]
 	}
 	return email
+}
+
+// fetchModerationStatus fetches user moderation status from moderation service
+func fetchModerationStatus(username string, authToken string) (*ModerationStatusResponse, error) {
+	statusURL := fmt.Sprintf("%s/statuses?username=%s", config.ModerationURL, url.QueryEscape(username))
+
+	req, err := http.NewRequest(http.MethodGet, statusURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch moderation status: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("moderation service returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var status ModerationStatusResponse
+	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+		return nil, fmt.Errorf("failed to decode moderation status response: %w", err)
+	}
+
+	return &status, nil
+}
+
+// PostFlagUser handles POST /users/:username/flag
+func PostFlagUser(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		c.String(http.StatusBadRequest, "username required")
+		return
+	}
+
+	// Get auth cookie for moderation service
+	tokenCookie, err := c.Cookie("auth_token")
+	if err != nil {
+		c.String(http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// Call moderation service
+	moderationURL := fmt.Sprintf("%s/flag-user", config.ModerationURL)
+	formData := fmt.Sprintf("username=%s", url.QueryEscape(username))
+
+	req, err := http.NewRequest(http.MethodPost, moderationURL, strings.NewReader(formData))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "internal error")
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenCookie)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Printf("error calling moderation service to flag user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "failed to flag user")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("moderation service returned %d when flagging user %s: %s", resp.StatusCode, username, string(body))
+		c.String(http.StatusInternalServerError, "failed to flag user")
+		return
+	}
+
+	// Fetch updated moderation status
+	modStatusResponse, err := fetchModerationStatus(username, tokenCookie)
+	if err != nil {
+		log.Printf("error fetching moderation status after flagging user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	// Return updated moderation controls partial
+	modStatus := users.ModerationStatus{
+		IsFlagged:  modStatusResponse.Flagged,
+		IsSuspended: modStatusResponse.Silenced,
+	}
+	content := users.ModerationControlsPartial(username, modStatus)
+	if err := content.Render(c.Request.Context(), c.Writer); err != nil {
+		log.Printf("error rendering moderation controls partial: %v", err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+	}
+}
+
+// PostUnflagUser handles POST /users/:username/unflag
+func PostUnflagUser(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		c.String(http.StatusBadRequest, "username required")
+		return
+	}
+
+	// Get auth cookie for moderation service
+	tokenCookie, err := c.Cookie("auth_token")
+	if err != nil {
+		c.String(http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// Call moderation service
+	moderationURL := fmt.Sprintf("%s/unflag-user", config.ModerationURL)
+	formData := fmt.Sprintf("username=%s", url.QueryEscape(username))
+
+	req, err := http.NewRequest(http.MethodPost, moderationURL, strings.NewReader(formData))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "internal error")
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenCookie)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Printf("error calling moderation service to unflag user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "failed to unflag user")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("moderation service returned %d when unflagging user %s: %s", resp.StatusCode, username, string(body))
+		c.String(http.StatusInternalServerError, "failed to unflag user")
+		return
+	}
+
+	// Fetch updated moderation status
+	modStatusResponse, err := fetchModerationStatus(username, tokenCookie)
+	if err != nil {
+		log.Printf("error fetching moderation status after unflagging user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	// Return updated moderation controls partial
+	modStatus := users.ModerationStatus{
+		IsFlagged:  modStatusResponse.Flagged,
+		IsSuspended: modStatusResponse.Silenced,
+	}
+	content := users.ModerationControlsPartial(username, modStatus)
+	if err := content.Render(c.Request.Context(), c.Writer); err != nil {
+		log.Printf("error rendering moderation controls partial: %v", err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+	}
+}
+
+// PostSilenceUser handles POST /users/:username/silence
+func PostSilenceUser(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		c.String(http.StatusBadRequest, "username required")
+		return
+	}
+
+	// Get auth cookie for moderation service
+	tokenCookie, err := c.Cookie("auth_token")
+	if err != nil {
+		c.String(http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// Call moderation service
+	moderationURL := fmt.Sprintf("%s/silence-user", config.ModerationURL)
+	formData := fmt.Sprintf("username=%s", url.QueryEscape(username))
+
+	req, err := http.NewRequest(http.MethodPost, moderationURL, strings.NewReader(formData))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "internal error")
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenCookie)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Printf("error calling moderation service to silence user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "failed to silence user")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("moderation service returned %d when silencing user %s: %s", resp.StatusCode, username, string(body))
+		c.String(http.StatusInternalServerError, "failed to silence user")
+		return
+	}
+
+	// Fetch updated moderation status
+	modStatusResponse, err := fetchModerationStatus(username, tokenCookie)
+	if err != nil {
+		log.Printf("error fetching moderation status after silencing user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	// Return updated moderation controls partial
+	modStatus := users.ModerationStatus{
+		IsFlagged:  modStatusResponse.Flagged,
+		IsSuspended: modStatusResponse.Silenced,
+	}
+	content := users.ModerationControlsPartial(username, modStatus)
+	if err := content.Render(c.Request.Context(), c.Writer); err != nil {
+		log.Printf("error rendering moderation controls partial: %v", err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+	}
+}
+
+// PostUnsilenceUser handles POST /users/:username/unsilence
+func PostUnsilenceUser(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		c.String(http.StatusBadRequest, "username required")
+		return
+	}
+
+	// Get auth cookie for moderation service
+	tokenCookie, err := c.Cookie("auth_token")
+	if err != nil {
+		c.String(http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// Call moderation service
+	moderationURL := fmt.Sprintf("%s/unsilence-user", config.ModerationURL)
+	formData := fmt.Sprintf("username=%s", url.QueryEscape(username))
+
+	req, err := http.NewRequest(http.MethodPost, moderationURL, strings.NewReader(formData))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "internal error")
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenCookie)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Printf("error calling moderation service to unsilence user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "failed to unsilence user")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("moderation service returned %d when unsilencing user %s: %s", resp.StatusCode, username, string(body))
+		c.String(http.StatusInternalServerError, "failed to unsilence user")
+		return
+	}
+
+	// Fetch updated moderation status
+	modStatusResponse, err := fetchModerationStatus(username, tokenCookie)
+	if err != nil {
+		log.Printf("error fetching moderation status after unsilencing user %s: %v", username, err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	// Return updated moderation controls partial
+	modStatus := users.ModerationStatus{
+		IsFlagged:  modStatusResponse.Flagged,
+		IsSuspended: modStatusResponse.Silenced,
+	}
+	content := users.ModerationControlsPartial(username, modStatus)
+	if err := content.Render(c.Request.Context(), c.Writer); err != nil {
+		log.Printf("error rendering moderation controls partial: %v", err)
+		c.String(http.StatusInternalServerError, "Internal Server Error")
+	}
 }

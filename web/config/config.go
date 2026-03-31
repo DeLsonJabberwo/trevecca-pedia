@@ -12,6 +12,7 @@ var WikiURL string
 var SearchURL string
 var ImageServiceURL string
 var AuthURL string
+var ModerationURL string
 
 func init() {
 	if err := godotenv.Load(); err != nil {
@@ -22,7 +23,8 @@ func init() {
 	WikiURL = fmt.Sprintf("%s/wiki", apiURL)
 	SearchURL = fmt.Sprintf("%s/search", apiURL)
 	AuthURL = fmt.Sprintf("%s/auth", apiURL)
-  ImageServiceURL = GetEnv("IMAGE_SERVICE_URL", "https://treveccabuddy.tp-images.workers.dev")
+	ModerationURL = fmt.Sprintf("%s/mod", apiURL)
+	ImageServiceURL = GetEnv("IMAGE_SERVICE_URL", "https://treveccabuddy.tp-images.workers.dev")
 }
 
 func GetEnv(key, fallback string) string {

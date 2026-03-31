@@ -7,6 +7,8 @@ import (
 	"moderation/config"
 	"net/url"
 	"strings"
+
+	_ "github.com/lib/pq"
 )
 
 func GetDatabase() (*sql.DB, error) {
@@ -68,4 +70,3 @@ func parseDatabaseURL(databaseURL string) (host, port, dbname, user, password st
 
 	return
 }
-

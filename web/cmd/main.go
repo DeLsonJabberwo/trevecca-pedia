@@ -50,6 +50,10 @@ func main() {
 	moderator.Use(auth.RequireRole("moderator"))
 	{
 		moderator.POST("/pages/:id/delete", wiki.PostDeletePage)
+		moderator.POST("/users/:username/flag", users.PostFlagUser)
+		moderator.POST("/users/:username/unflag", users.PostUnflagUser)
+		moderator.POST("/users/:username/silence", users.PostSilenceUser)
+		moderator.POST("/users/:username/unsilence", users.PostUnsilenceUser)
 	}
 
 	r.GET("/image/*id", image.GetImage)

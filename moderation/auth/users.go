@@ -22,7 +22,7 @@ type User struct {
 
 type Statuses struct {
 	Flagged		bool
-	Silenced	bool
+	Suspended	bool
 }
 
 func GetUser(username string) (User, error) {
@@ -50,7 +50,7 @@ func GetUser(username string) (User, error) {
 func GetUserStatuses(ctx context.Context, db *sql.DB, user User) Statuses {
 	return Statuses{
 		Flagged: IsFlagged(ctx, db, user),
-		Silenced: IsSilenced(ctx, db, user),
+		Suspended: IsSuspended(ctx, db, user),
 	}
 }
 
